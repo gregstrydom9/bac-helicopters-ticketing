@@ -54,7 +54,7 @@ def create_placeholder_dg_pdf():
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, ListFlowable, ListItem
         from reportlab.lib.colors import HexColor, black
         from reportlab.lib.units import mm
     except ImportError:
@@ -94,6 +94,13 @@ def create_placeholder_dg_pdf():
         parent=styles['Normal'],
         fontSize=10,
         spaceAfter=8
+    )
+    bullet_style = ParagraphStyle(
+        'Bullet',
+        parent=styles['Normal'],
+        fontSize=10,
+        leftIndent=20,
+        spaceAfter=4
     )
 
     content = []
@@ -153,13 +160,10 @@ def create_placeholder_dg_pdf():
         "Lithium batteries present a fire risk if damaged, defective, or overheated. The following rules apply:",
         body_style
     ))
-    content.append(Paragraph(
-        "<bullet>&bull;</bullet> Spare lithium batteries must be carried in carry-on baggage only<br/>"
-        "<bullet>&bull;</bullet> Batteries must be protected from short circuit (original packaging or tape over terminals)<br/>"
-        "<bullet>&bull;</bullet> Power banks are treated as spare batteries<br/>"
-        "<bullet>&bull;</bullet> Devices containing lithium batteries should be switched off during flight",
-        body_style
-    ))
+    content.append(Paragraph("- Spare lithium batteries must be carried in carry-on baggage only", bullet_style))
+    content.append(Paragraph("- Batteries must be protected from short circuit (original packaging or tape over terminals)", bullet_style))
+    content.append(Paragraph("- Power banks are treated as spare batteries", bullet_style))
+    content.append(Paragraph("- Devices containing lithium batteries should be switched off during flight", bullet_style))
 
     # Declaration
     content.append(Paragraph("PASSENGER DECLARATION", heading_style))
@@ -167,13 +171,10 @@ def create_placeholder_dg_pdf():
         "By checking the acknowledgment box on the ticket form, you confirm that:",
         body_style
     ))
-    content.append(Paragraph(
-        "<bullet>&bull;</bullet> You have read and understood this dangerous goods information<br/>"
-        "<bullet>&bull;</bullet> Your baggage does not contain any prohibited items<br/>"
-        "<bullet>&bull;</bullet> You have not accepted items from unknown persons<br/>"
-        "<bullet>&bull;</bullet> You understand that carrying prohibited items is a criminal offense",
-        body_style
-    ))
+    content.append(Paragraph("- You have read and understood this dangerous goods information", bullet_style))
+    content.append(Paragraph("- Your baggage does not contain any prohibited items", bullet_style))
+    content.append(Paragraph("- You have not accepted items from unknown persons", bullet_style))
+    content.append(Paragraph("- You understand that carrying prohibited items is a criminal offense", bullet_style))
 
     # Contact
     content.append(Spacer(1, 20))
