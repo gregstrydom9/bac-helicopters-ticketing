@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BAC Helicopters - Passenger Ticket</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #1a365d;
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a365d;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .flight-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .flight-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flight-item label {
+            font-size: 0.75rem;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .flight-item span {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+
+        .form-group label .required {
+            color: #e53e3e;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
+        input:read-only {
+            background: #f7fafc;
+            color: #718096;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .photo-upload {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+
+        .photo-upload:hover {
+            border-color: #4299e1;
+            background: #f7fafc;
+        }
+
+        .photo-upload.has-image {
+            border-style: solid;
+            border-color: #48bb78;
+        }
+
+        .photo-upload input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .photo-upload .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .photo-upload .label {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+
+        .photo-preview {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .signature-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .signature-canvas {
+            width: 100%;
+            height: 150px;
+            background: #fafafa;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .signature-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 8px;
+            background: #f7fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .signature-actions button {
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .signature-actions button:hover {
+            background: #cbd5e0;
+        }
+
+        .dg-panel {
+            background: #fffbeb;
+            border: 1px solid #f6e05e;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .dg-panel .title {
+            color: #744210;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .dg-panel p {
+            font-size: 0.875rem;
+            color: #744210;
+            margin-bottom: 12px;
+        }
+
+        .dg-panel a {
+            color: #d69e2e;
+            text-decoration: underline;
+        }
+
+        .conditions-panel {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: #4a5568;
+            white-space: pre-wrap;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 0.875rem;
+            color: #4a5568;
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            background: #1a365d;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .submit-btn:hover {
+            background: #2c5282;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #276749;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .success-message h3 {
+            margin-bottom: 8px;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 12px;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .flight-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BAC Helicopters</h1>
+            <p>Passenger Ticket Registration</p>
+        </div>
+
+        <div class="content" id="formContent">
+            <div class="error-message" id="errorMessage"></div>
+
+            <form id="ticketForm">
+                <!-- Flight Details (Read-only) -->
+                <div class="section">
+                    <div class="section-title">Flight Details</div>
+                    <div class="flight-details">
+                        <div class="flight-item">
+                            <label>Date</label>
+                            <span id="displayDate">{{ flight_date }}</span>
+                        </div>
+                        <div class="flight-item">
+                            <label>Time</label>
+                            <span id="displayTime">{{ flight_time }}</span>
+                        </div>
+                        <div class="flight-item">
+                            <label>Route</label>
+                            <span id="displayRoute">{{ route }}</span>
+                        </div>
+                        <div class="flight-item">
+                            <label>Registration</label>
+                            <span id="displayReg">{{ registration }}</span>
+                        </div>
+                        <div class="flight-item" style="grid-column: span 2;">
+                            <label>Pilot</label>
+                            <span id="displayPilot">{{ pilot }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields for form submission -->
+                    <input type="hidden" id="flightDate" value="{{ flight_date }}">
+                    <input type="hidden" id="flightTime" value="{{ flight_time }}">
+                    <input type="hidden" id="route" value="{{ route }}">
+                    <input type="hidden" id="registration" value="{{ registration }}">
+                    <input type="hidden" id="pilot" value="{{ pilot }}">
+                </div>
+
+                <!-- Passenger Details -->
+                <div class="section">
+                    <div class="section-title">Passenger Details</div>
+
+                    <div class="form-group">
+                        <label>Full Name <span class="required">*</span></label>
+                        <input type="text" id="name" required placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address(es) <span class="required">*</span></label>
+                        <input type="email" id="email" required placeholder="your@email.com">
+                        <small style="color: #718096; font-size: 0.75rem;">Separate multiple emails with commas</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Body Weight (kg) <span class="required">*</span></label>
+                            <input type="number" id="bodyWeight" required min="20" max="300" step="0.1" placeholder="kg">
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Bags</label>
+                            <input type="number" id="numBags" value="0" min="0" max="10">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Total Bag Weight (kg)</label>
+                        <input type="number" id="bagWeight" value="0" min="0" max="100" step="0.1" placeholder="kg">
+                    </div>
+                </div>
+
+                <!-- Evidence Photos -->
+                <div class="section">
+                    <div class="section-title">Evidence Photos (Optional)</div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Person on Scale</label>
+                            <div class="photo-upload" id="photo1Upload">
+                                <div class="icon">📷</div>
+                                <div class="label">Tap to capture</div>
+                                <input type="file" accept="image/*" capture="environment" id="photo1Input">
+                                <img class="photo-preview" id="photo1Preview" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Bags on Scale</label>
+                            <div class="photo-upload" id="photo2Upload">
+                                <div class="icon">📷</div>
+                                <div class="label">Tap to capture</div>
+                                <input type="file" accept="image/*" capture="environment" id="photo2Input">
+                                <img class="photo-preview" id="photo2Preview" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dangerous Goods -->
+                <div class="section">
+                    <div class="section-title">Dangerous Goods Declaration</div>
+                    <div class="dg-panel">
+                        <div class="title">Important Safety Information</div>
+                        <p>
+                            You must not carry dangerous goods including explosives, compressed gases,
+                            flammable liquids/solids, oxidizers, poisons, corrosives, or radioactive materials.
+                        </p>
+                        <p>
+                            <a href="/docs/dg" target="_blank">View Dangerous Goods Information (PDF)</a>
+                        </p>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="dgAck" required>
+                            <label for="dgAck">I have read and understood the Dangerous Goods information <span class="required">*</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conditions of Carriage -->
+                <div class="section">
+                    <div class="section-title">Conditions of Carriage</div>
+                    <div class="conditions-panel">{{ conditions }}</div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="conditionsAck" required>
+                        <label for="conditionsAck">I have read and accept the Conditions of Carriage <span class="required">*</span></label>
+                    </div>
+                </div>
+
+                <!-- Signature -->
+                <div class="section">
+                    <div class="section-title">Signature <span class="required">*</span></div>
+                    <div class="signature-container">
+                        <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+                        <div class="signature-actions">
+                            <button type="button" id="clearSignature">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Submit Ticket
+                </button>
+            </form>
+        </div>
+
+        <div class="content" id="successContent" style="display: none;">
+            <div class="success-message">
+                <h3>Ticket Submitted Successfully!</h3>
+                <p>Check your email for your ticket confirmation.</p>
+                <p style="margin-top: 12px; font-size: 0.875rem; color: #38a169;">
+                    You can close this page now.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =================================================================
+        // Signature Canvas
+        // =================================================================
+        const canvas = document.getElementById('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let hasSignature = false;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            ctx.strokeStyle = '#1a365d';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches.length > 0) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const coords = getCoords(e);
+            lastX = coords.x;
+            lastY = coords.y;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const coords = getCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(coords.x, coords.y);
+            ctx.stroke();
+
+            lastX = coords.x;
+            lastY = coords.y;
+            hasSignature = true;
+        }
+
+        function stopDrawing(e) {
+            if (e) e.preventDefault();
+            isDrawing = false;
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSignature = false;
+        });
+
+        // Initialize canvas
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function getSignatureAsJpeg() {
+            // Create a higher resolution canvas for export
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = 900;
+            exportCanvas.height = 300;
+            const exportCtx = exportCanvas.getContext('2d');
+
+            // White background
+            exportCtx.fillStyle = '#ffffff';
+            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+            // Scale and draw the signature
+            const scaleX = exportCanvas.width / canvas.width * (window.devicePixelRatio || 1);
+            const scaleY = exportCanvas.height / canvas.height * (window.devicePixelRatio || 1);
+            exportCtx.scale(scaleX, scaleY);
+            exportCtx.drawImage(canvas, 0, 0);
+
+            return exportCanvas.toDataURL('image/jpeg', 0.9);
+        }
+
+        // =================================================================
+        // Image Compression
+        // =================================================================
+        const MAX_IMAGE_DIM = 1024;
+        const IMAGE_QUALITY = 0.65;
+        const MAX_BASE64_CHARS = 800000;
+
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let { width, height } = img;
+
+                        // Scale down if needed
+                        if (width > MAX_IMAGE_DIM || height > MAX_IMAGE_DIM) {
+                            if (width > height) {
+                                height = (height / width) * MAX_IMAGE_DIM;
+                                width = MAX_IMAGE_DIM;
+                            } else {
+                                width = (width / height) * MAX_IMAGE_DIM;
+                                height = MAX_IMAGE_DIM;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const dataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+
+                        if (dataUrl.length > MAX_BASE64_CHARS) {
+                            // Try lower quality
+                            const lowerQuality = canvas.toDataURL('image/jpeg', 0.4);
+                            if (lowerQuality.length > MAX_BASE64_CHARS) {
+                                reject(new Error('Image too large even after compression'));
+                            } else {
+                                resolve(lowerQuality);
+                            }
+                        } else {
+                            resolve(dataUrl);
+                        }
+                    };
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // =================================================================
+        // Photo Upload Handlers
+        // =================================================================
+        let photo1Data = '';
+        let photo2Data = '';
+
+        async function handlePhotoUpload(input, previewId, uploadId, setData) {
+            const file = input.files[0];
+            if (!file) return;
+
+            try {
+                const compressed = await compressImage(file);
+                setData(compressed);
+
+                const preview = document.getElementById(previewId);
+                const upload = document.getElementById(uploadId);
+
+                preview.src = compressed;
+                preview.style.display = 'block';
+                upload.classList.add('has-image');
+                upload.querySelector('.icon').style.display = 'none';
+                upload.querySelector('.label').textContent = 'Tap to change';
+            } catch (err) {
+                showError('Failed to process image: ' + err.message);
+                input.value = '';
+            }
+        }
+
+        document.getElementById('photo1Input').addEventListener('change', function() {
+            handlePhotoUpload(this, 'photo1Preview', 'photo1Upload', (data) => photo1Data = data);
+        });
+
+        document.getElementById('photo2Input').addEventListener('change', function() {
+            handlePhotoUpload(this, 'photo2Preview', 'photo2Upload', (data) => photo2Data = data);
+        });
+
+        // =================================================================
+        // Form Submission
+        // =================================================================
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const submitBtn = document.getElementById('submitBtn');
+
+            // Validate signature
+            if (!hasSignature) {
+                showError('Please provide your signature');
+                return;
+            }
+
+            // Validate checkboxes
+            if (!document.getElementById('dgAck').checked) {
+                showError('Please acknowledge the Dangerous Goods information');
+                return;
+            }
+
+            if (!document.getElementById('conditionsAck').checked) {
+                showError('Please accept the Conditions of Carriage');
+                return;
+            }
+
+            // Get signature
+            const signatureData = getSignatureAsJpeg();
+
+            // Check total size
+            const totalBase64 = signatureData.length + photo1Data.length + photo2Data.length;
+            if (totalBase64 > 1200000) {
+                showError('Total image data is too large. Please use smaller photos.');
+                return;
+            }
+
+            // Build payload
+            const payload = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                body_weight: document.getElementById('bodyWeight').value,
+                num_bags: document.getElementById('numBags').value || '0',
+                bag_weight: document.getElementById('bagWeight').value || '0',
+                flight_date: document.getElementById('flightDate').value,
+                flight_time: document.getElementById('flightTime').value,
+                route: document.getElementById('route').value,
+                registration: document.getElementById('registration').value,
+                pilot: document.getElementById('pilot').value,
+                signature_data: signatureData,
+                photo1_data: photo1Data,
+                photo2_data: photo2Data,
+                dg_acknowledged: document.getElementById('dgAck').checked,
+                conditions_accepted: document.getElementById('conditionsAck').checked
+            };
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loader"></span>Submitting...';
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Show success
+                    document.getElementById('formContent').style.display = 'none';
+                    document.getElementById('successContent').style.display = 'block';
+                } else {
+                    showError(result.error || 'Failed to submit ticket. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Ticket';
+                }
+            } catch (err) {
+                showError('Network error. Please check your connection and try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Ticket';
+            }
+        });
+    </script>
+</body>
+</html>

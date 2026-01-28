@@ -1,0 +1,32 @@
+run = "python3 -m pip install -q -r requirements.txt && python3 embed_logo.py && python3 main.py"
+
+[env]
+PORT = "5000"
+PYTHONUNBUFFERED = "1"
+# PUBLIC_BASE_URL = "https://<your-subdomain>.replit.dev"
+
+# Email configuration (optional)
+# SMTP_HOST = "smtp.gmail.com"
+# SMTP_PORT = "587"
+# SMTP_USER = "your-email@gmail.com"
+# SMTP_PASSWORD = "your-app-password"
+# SMTP_USE_TLS = "true"
+# FROM_EMAIL = "noreply@bachelicopters.com"
+# PILOT_EMAIL = "pilot@bachelicopters.com"
+
+# SharePoint configuration (optional)
+# MS_TENANT_ID = "your-tenant-id"
+# MS_CLIENT_ID = "your-client-id"
+# MS_CLIENT_SECRET = "your-client-secret"
+# SP_DRIVE_ID = "your-drive-id"
+# SP_BASE_FOLDER = "BAC-Ticketing"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["sh", "-c", "python3 -m pip install -q -r requirements.txt && python3 embed_logo.py && python3 main.py"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80

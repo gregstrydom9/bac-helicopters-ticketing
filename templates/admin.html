@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAC Helicopters - Admin Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f7fafc;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #1a365d;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .header .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .auth-form {
+            max-width: 400px;
+            margin: 60px auto;
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .auth-form h2 {
+            margin-bottom: 24px;
+            color: #1a365d;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 16px;
+        }
+
+        .auth-form button {
+            width: 100%;
+            padding: 12px;
+            background: #1a365d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .auth-form button:hover {
+            background: #2c5282;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #f7fafc;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #1a365d;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2c5282;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .qr-result {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .qr-result img {
+            max-width: 200px;
+            margin: 16px auto;
+            display: block;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .qr-result .url {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            margin: 12px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .flights-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .flights-table th,
+        .flights-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .flights-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #718096;
+        }
+
+        .flights-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .stat-item {
+            background: #f7fafc;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a365d;
+        }
+
+        .stat-item .label {
+            font-size: 0.75rem;
+            color: #718096;
+            text-transform: uppercase;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .empty-state h3 {
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: #4299e1;
+            font-size: 0.8rem;
+        }
+
+        .copy-btn:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .flights-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% if not authorized %}
+    <!-- Login Form -->
+    <div class="container">
+        <div class="auth-form">
+            <h2>Admin Access</h2>
+            <form id="authForm">
+                <input type="password" id="adminKey" placeholder="Enter admin key" required>
+                <button type="submit">Access Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('authForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const key = document.getElementById('adminKey').value;
+            window.location.href = '/admin?key=' + encodeURIComponent(key);
+        });
+    </script>
+
+    {% else %}
+    <!-- Admin Dashboard -->
+    <div class="header">
+        <h1>BAC Helicopters Admin</h1>
+        <span class="badge">Dashboard</span>
+    </div>
+
+    <div class="container">
+        <div id="alerts"></div>
+
+        <!-- Create Flight Link -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Create Flight Link & QR</h2>
+            </div>
+            <div class="card-body">
+                <form id="createLinkForm">
+                    <input type="hidden" name="key" value="{{ admin_key }}">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date *</label>
+                            <input type="date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Time *</label>
+                            <input type="time" name="time" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Route *</label>
+                            <input type="text" name="route" placeholder="e.g., JHB-CPT" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Registration *</label>
+                            <input type="text" name="reg" placeholder="e.g., ZS-XXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pilot *</label>
+                            <input type="text" name="pilot" placeholder="Pilot name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Email Recipients (optional)</label>
+                            <input type="text" name="emails" placeholder="email1@example.com, email2@example.com">
+                            <small style="color: #718096; font-size: 0.75rem;">Separate multiple emails with commas or semicolons</small>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <button type="submit" class="btn btn-primary" id="createBtn">
+                            Generate Link & QR
+                        </button>
+                    </div>
+                </form>
+
+                <div class="qr-result" id="qrResult">
+                    <h3 style="margin-bottom: 12px;">Flight Link Generated</h3>
+                    <img id="qrImage" src="" alt="QR Code">
+                    <div class="url" id="shareUrl"></div>
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="copyUrl()">Copy Link</button>
+                        <button class="btn btn-secondary" onclick="downloadQr()">Download QR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flight Manifests -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Flight Manifests</h2>
+                <button class="btn btn-secondary btn-sm" onclick="location.reload()">Refresh</button>
+            </div>
+            <div class="card-body">
+                {% if flights %}
+                <table class="flights-table">
+                    <thead>
+                        <tr>
+                            <th>Flight ID</th>
+                            <th>Date</th>
+                            <th>Route</th>
+                            <th>Aircraft</th>
+                            <th>Passengers</th>
+                            <th>Total Weight</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for flight in flights %}
+                        <tr>
+                            <td style="font-family: monospace; font-size: 0.8rem;">{{ flight.flight_id }}</td>
+                            <td>{{ flight.date or 'N/A' }}</td>
+                            <td>{{ flight.route or 'N/A' }}</td>
+                            <td>{{ flight.registration or 'N/A' }}</td>
+                            <td>{{ flight.passenger_count }}</td>
+                            <td>
+                                <span title="Body: {{ flight.total_body_weight|round(1) }} kg, Bags: {{ flight.total_bag_weight|round(1) }} kg">
+                                    {{ (flight.total_body_weight + flight.total_bag_weight)|round(1) }} kg
+                                </span>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <a href="/admin/download_manifest?key={{ admin_key }}&flight_id={{ flight.flight_id }}"
+                                       class="btn btn-secondary btn-sm">CSV</a>
+                                    <a href="/admin/download_tickets?key={{ admin_key }}&flight_id={{ flight.flight_id }}"
+                                       class="btn btn-secondary btn-sm">Tickets</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Summary Stats -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="value">{{ flights|length }}</div>
+                        <div class="label">Flights</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">{{ flights|sum(attribute='passenger_count') }}</div>
+                        <div class="label">Passengers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">{{ flights|sum(attribute='total_body_weight')|round(0)|int }}</div>
+                        <div class="label">Body Weight (kg)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">{{ flights|sum(attribute='total_bags') }}</div>
+                        <div class="label">Total Bags</div>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="empty-state">
+                    <h3>No Flights Yet</h3>
+                    <p>Create a flight link above to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const adminKey = '{{ admin_key }}';
+        let lastGeneratedUrl = '';
+        let lastQrBase64 = '';
+
+        function showAlert(message, type = 'success') {
+            const alerts = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alerts.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        document.getElementById('createLinkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+            const btn = document.getElementById('createBtn');
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/admin/create_link', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    lastGeneratedUrl = result.url;
+                    lastQrBase64 = result.qr;
+
+                    document.getElementById('qrImage').src = 'data:image/png;base64,' + result.qr;
+                    document.getElementById('shareUrl').textContent = result.url;
+                    document.getElementById('qrResult').style.display = 'block';
+
+                    // Check if emails were sent
+                    const emails = formData.get('emails');
+                    if (emails && emails.trim()) {
+                        showAlert('Link generated and emails sent!');
+                    } else {
+                        showAlert('Link generated successfully!');
+                    }
+                } else {
+                    showAlert(result.error || 'Failed to generate link', 'error');
+                }
+            } catch (err) {
+                showAlert('Network error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Link & QR';
+            }
+        });
+
+        function copyUrl() {
+            if (lastGeneratedUrl) {
+                navigator.clipboard.writeText(lastGeneratedUrl).then(() => {
+                    showAlert('Link copied to clipboard!');
+                }).catch(() => {
+                    // Fallback
+                    const input = document.createElement('input');
+                    input.value = lastGeneratedUrl;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    showAlert('Link copied to clipboard!');
+                });
+            }
+        }
+
+        function downloadQr() {
+            if (lastQrBase64) {
+                const link = document.createElement('a');
+                link.href = 'data:image/png;base64,' + lastQrBase64;
+                link.download = 'flight_qr.png';
+                link.click();
+            }
+        }
+    </script>
+    {% endif %}
+</body>
+</html>
