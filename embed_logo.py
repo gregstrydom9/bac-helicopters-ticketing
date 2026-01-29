@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Logo Embedding Script for BAC Helicopters Ticketing System
+Version 2.0 - Fixed embedding verification
 
 This script reads a logo file, base64-encodes it, and embeds it
 into main_template.py to create main.py.
