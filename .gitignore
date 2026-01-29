@@ -1,0 +1,15 @@
+# Generated files
+main.py
+*.pyc
+__pycache__/
+
+# Runtime directories
+tickets/
+manifest/
+outbox/
+
+# OS files
+.DS_Store
+
+# Environment
+.env
