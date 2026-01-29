@@ -1,1 +1,1 @@
-web: python embed_logo.py && python main.py
+web: python embed_logo.py && sleep 1 && cat main.py | head -c 500 && echo "..." && python main.py
