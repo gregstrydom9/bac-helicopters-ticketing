@@ -33,7 +33,12 @@ PLACEHOLDER = "%%BASE64_LOGO%%"
 
 def find_logo():
     """Find a logo file in the current directory."""
-    base_dir = Path(__file__).parent
+    # Try both current working directory and script directory
+    search_dirs = [Path.cwd(), Path(__file__).parent]
+
+    print(f"Current working directory: {Path.cwd()}")
+    print(f"Script directory: {Path(__file__).parent}")
+    print(f"Directory contents: {list(Path.cwd().glob('*'))}")
 
     # Check command line argument first
     if len(sys.argv) > 1:
@@ -43,20 +48,26 @@ def find_logo():
         else:
             print(f"Warning: Specified logo file not found: {logo_path}")
 
-    # Try common filenames
-    for filename in LOGO_CANDIDATES:
-        logo_path = base_dir / filename
-        if logo_path.exists():
-            return logo_path
+    # Try common filenames in both directories
+    for base_dir in search_dirs:
+        for filename in LOGO_CANDIDATES:
+            logo_path = base_dir / filename
+            print(f"Checking: {logo_path} - exists: {logo_path.exists()}")
+            if logo_path.exists():
+                return logo_path
 
     return None
 
 
 def embed_logo():
     """Read logo, encode to base64, and embed in template."""
-    base_dir = Path(__file__).parent
+    # Use current working directory for Railway compatibility
+    base_dir = Path.cwd()
     template_path = base_dir / TEMPLATE_FILE
     output_path = base_dir / OUTPUT_FILE
+
+    print(f"Template path: {template_path} - exists: {template_path.exists()}")
+    print(f"Output path: {output_path}")
 
     # Check template exists
     if not template_path.exists():
