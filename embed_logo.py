@@ -101,6 +101,18 @@ def embed_logo():
     output_path.write_text(output_content, encoding='utf-8')
     print(f"Generated: {output_path}")
 
+    # Verify the file was written correctly
+    written_content = output_path.read_text(encoding='utf-8')
+    if "%%BASE64_LOGO%%" in written_content:
+        print("ERROR: Placeholder still in output file!")
+    else:
+        print(f"SUCCESS: Logo embedded, main.py size: {len(written_content)} chars")
+        # Print a snippet around BASE64_LOGO
+        idx = written_content.find('BASE64_LOGO = "')
+        if idx != -1:
+            snippet = written_content[idx:idx+100]
+            print(f"Snippet: {snippet}...")
+
     # Verify
     if logo_base64:
         # Quick verification
