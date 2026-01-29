@@ -191,6 +191,9 @@
             height: 150px;
             background: #fafafa;
             touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
             cursor: crosshair;
         }
 
@@ -527,7 +530,7 @@
 
     <script>
         // =================================================================
-        // Signature Canvas
+        // Signature Canvas - Mobile-optimized
         // =================================================================
         const canvas = document.getElementById('signatureCanvas');
         const ctx = canvas.getContext('2d');
@@ -535,46 +538,87 @@
         let lastX = 0;
         let lastY = 0;
         let hasSignature = false;
+        let canvasInitialized = false;
 
-        function resizeCanvas() {
+        // Store drawing paths for redraw after resize
+        let paths = [];
+        let currentPath = [];
+
+        function initCanvas() {
             const rect = canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
+            // Use CSS pixels, not device pixels - simpler and more reliable on mobile
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
             ctx.strokeStyle = '#1a365d';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
+
+            // Redraw existing paths
+            redrawPaths();
+            canvasInitialized = true;
+        }
+
+        function redrawPaths() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#1a365d';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            for (const path of paths) {
+                if (path.length < 2) continue;
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                for (let i = 1; i < path.length; i++) {
+                    ctx.lineTo(path[i].x, path[i].y);
+                }
+                ctx.stroke();
+            }
         }
 
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+
             if (e.touches && e.touches.length > 0) {
-                return {
-                    x: e.touches[0].clientX - rect.left,
-                    y: e.touches[0].clientY - rect.top
-                };
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
             }
-            return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
+
+            // Calculate position relative to canvas
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            return { x, y };
         }
 
         function startDrawing(e) {
             e.preventDefault();
+            e.stopPropagation();
+
+            if (!canvasInitialized) initCanvas();
+
             isDrawing = true;
             const coords = getCoords(e);
             lastX = coords.x;
             lastY = coords.y;
+
+            // Start new path
+            currentPath = [{ x: lastX, y: lastY }];
         }
 
         function draw(e) {
             if (!isDrawing) return;
             e.preventDefault();
+            e.stopPropagation();
 
             const coords = getCoords(e);
+
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(coords.x, coords.y);
@@ -583,33 +627,62 @@
             lastX = coords.x;
             lastY = coords.y;
             hasSignature = true;
+
+            // Add to current path
+            currentPath.push({ x: coords.x, y: coords.y });
         }
 
         function stopDrawing(e) {
-            if (e) e.preventDefault();
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (isDrawing && currentPath.length > 0) {
+                paths.push(currentPath);
+                currentPath = [];
+            }
             isDrawing = false;
         }
 
+        // Mouse events
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
 
+        // Touch events - critical for mobile
         canvas.addEventListener('touchstart', startDrawing, { passive: false });
         canvas.addEventListener('touchmove', draw, { passive: false });
         canvas.addEventListener('touchend', stopDrawing, { passive: false });
+        canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
+
+        // Prevent scrolling while drawing on canvas
+        document.querySelector('.signature-container').addEventListener('touchmove', (e) => {
+            if (isDrawing) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         document.getElementById('clearSignature').addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             hasSignature = false;
+            paths = [];
+            currentPath = [];
         });
 
-        // Initialize canvas
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        // Initialize canvas on load
+        initCanvas();
+
+        // Reinitialize on resize, but debounce to avoid too many redraws
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(initCanvas, 100);
+        });
 
         function getSignatureAsJpeg() {
-            // Create a higher resolution canvas for export
+            // Create export canvas at fixed size
             const exportCanvas = document.createElement('canvas');
             exportCanvas.width = 900;
             exportCanvas.height = 300;
@@ -619,11 +692,25 @@
             exportCtx.fillStyle = '#ffffff';
             exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
-            // Scale and draw the signature
-            const scaleX = exportCanvas.width / canvas.width * (window.devicePixelRatio || 1);
-            const scaleY = exportCanvas.height / canvas.height * (window.devicePixelRatio || 1);
-            exportCtx.scale(scaleX, scaleY);
-            exportCtx.drawImage(canvas, 0, 0);
+            // Calculate scale to fit signature into export canvas
+            const scaleX = exportCanvas.width / canvas.width;
+            const scaleY = exportCanvas.height / canvas.height;
+
+            // Draw the signature scaled
+            exportCtx.strokeStyle = '#1a365d';
+            exportCtx.lineWidth = 2.5 * Math.min(scaleX, scaleY);
+            exportCtx.lineCap = 'round';
+            exportCtx.lineJoin = 'round';
+
+            for (const path of paths) {
+                if (path.length < 2) continue;
+                exportCtx.beginPath();
+                exportCtx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
+                for (let i = 1; i < path.length; i++) {
+                    exportCtx.lineTo(path[i].x * scaleX, path[i].y * scaleY);
+                }
+                exportCtx.stroke();
+            }
 
             return exportCanvas.toDataURL('image/jpeg', 0.9);
         }
