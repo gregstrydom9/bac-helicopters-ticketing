@@ -85,22 +85,40 @@ MAX_SINGLE_IMAGE_BASE64 = 800_000  # ~600KB binary
 MAX_TOTAL_BASE64 = 1_200_000  # signature + photos
 
 # =============================================================================
-# Embedded Logo (replaced by embed_logo.py)
+# Logo Loading (loads from file at runtime)
 # =============================================================================
 
-BASE64_LOGO = "%%BASE64_LOGO%%"
-
-# Write embedded logo to outbox for verification on startup
-def write_embedded_logo():
-    """Write the embedded logo to a file for verification."""
-    if BASE64_LOGO and BASE64_LOGO != "%%BASE64_LOGO%%":
+def get_logo_base64():
+    """Load logo from file and return as base64."""
+    logo_path = BASE_DIR / "logo.png"
+    if logo_path.exists():
         try:
-            logo_data = base64.b64decode(BASE64_LOGO)
-            logo_path = OUTBOX_DIR / "embedded_logo.png"
-            logo_path.write_bytes(logo_data)
-            logger.info(f"Embedded logo written to {logo_path}")
+            logo_data = logo_path.read_bytes()
+            return base64.b64encode(logo_data).decode('utf-8')
         except Exception as e:
-            logger.error(f"Failed to write embedded logo: {e}")
+            logger.error(f"Failed to read logo: {e}")
+    return None
+
+def get_logo_bytes():
+    """Load logo from file and return as bytes."""
+    logo_path = BASE_DIR / "logo.png"
+    if logo_path.exists():
+        try:
+            return logo_path.read_bytes()
+        except Exception as e:
+            logger.error(f"Failed to read logo: {e}")
+    return None
+
+# For backwards compatibility
+BASE64_LOGO = get_logo_base64()
+
+def write_embedded_logo():
+    """Write logo status for verification on startup."""
+    logo_path = BASE_DIR / "logo.png"
+    if logo_path.exists():
+        logger.info(f"Logo file found: {logo_path} ({logo_path.stat().st_size} bytes)")
+    else:
+        logger.warning(f"Logo file not found: {logo_path}")
 
 # =============================================================================
 # Conditions of Carriage Text
@@ -367,9 +385,9 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     c.rect(0, y - header_height, width, header_height, fill=1, stroke=0)
 
     # Draw logo (white on dark background)
-    if BASE64_LOGO and BASE64_LOGO != "%%BASE64_LOGO%%":
+    logo_data = get_logo_bytes()
+    if logo_data:
         try:
-            logo_data = base64.b64decode(BASE64_LOGO)
             logo_reader = ImageReader(io.BytesIO(logo_data))
             logo_width = 50 * mm
             logo_height = 18 * mm
@@ -863,15 +881,13 @@ def healthz():
 
 @app.route('/debug/logo')
 def debug_logo():
-    """Debug endpoint to view the embedded logo."""
-    if not BASE64_LOGO or BASE64_LOGO == "%%BASE64_LOGO%%":
-        return "No logo embedded", 404
+    """Debug endpoint to view the logo."""
+    logo_bytes = get_logo_bytes()
+    if not logo_bytes:
+        logo_path = BASE_DIR / "logo.png"
+        return f"No logo found at {logo_path}", 404
 
-    try:
-        logo_data = base64.b64decode(BASE64_LOGO)
-        return Response(logo_data, mimetype='image/png')
-    except Exception as e:
-        return f"Error: {e}", 500
+    return Response(logo_bytes, mimetype='image/png')
 
 
 @app.route('/docs/dg')

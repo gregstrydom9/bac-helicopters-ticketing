@@ -1,1 +1,1 @@
-web: python embed_logo.py && python main.py
+web: python main_template.py
