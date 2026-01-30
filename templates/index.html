@@ -25,7 +25,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 20px rgba(0,0,0,0.1);
             overflow: hidden;
-            border-top: 4px solid #7a8b99;
+            border-top: 4px solid #1a5a8a;
         }
 
         .header {
@@ -43,7 +43,7 @@
 
         .header h1 {
             font-size: 1.1rem;
-            color: #7a8b99;
+            color: #1a5a8a;
             font-weight: 400;
             margin-bottom: 4px;
             text-transform: uppercase;
@@ -66,7 +66,7 @@
         .section-title {
             font-size: 0.9rem;
             font-weight: 600;
-            color: #7a8b99;
+            color: #1a5a8a;
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 2px solid #e2e8f0;
@@ -131,7 +131,7 @@
 
         input:focus {
             outline: none;
-            border-color: #7a8b99;
+            border-color: #1a5a8a;
             box-shadow: 0 0 0 3px rgba(122, 139, 153, 0.2);
         }
 
@@ -307,7 +307,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: white;
-            background: #7a8b99;
+            background: #1a5a8a;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -315,7 +315,7 @@
         }
 
         .submit-btn:hover {
-            background: #5c6b77;
+            background: #0d3a5a;
         }
 
         .submit-btn:active {
@@ -408,11 +408,11 @@
                     <div class="section-title">Flight Details</div>
                     <div class="flight-details">
                         <div class="flight-item">
-                            <label>Date</label>
+                            <label>Date of Flight</label>
                             <span id="displayDate">{{ flight_date }}</span>
                         </div>
                         <div class="flight-item">
-                            <label>Time</label>
+                            <label>ETD</label>
                             <span id="displayTime">{{ flight_time }}</span>
                         </div>
                         <div class="flight-item">
@@ -420,11 +420,15 @@
                             <span id="displayRoute">{{ route }}</span>
                         </div>
                         <div class="flight-item">
-                            <label>Registration</label>
+                            <label>A/C Type</label>
+                            <span id="displayAcType">{{ ac_type }}</span>
+                        </div>
+                        <div class="flight-item">
+                            <label>A/C Reg</label>
                             <span id="displayReg">{{ registration }}</span>
                         </div>
-                        <div class="flight-item" style="grid-column: span 2;">
-                            <label>Pilot</label>
+                        <div class="flight-item">
+                            <label>PIC</label>
                             <span id="displayPilot">{{ pilot }}</span>
                         </div>
                     </div>
@@ -433,6 +437,7 @@
                     <input type="hidden" id="flightDate" value="{{ flight_date }}">
                     <input type="hidden" id="flightTime" value="{{ flight_time }}">
                     <input type="hidden" id="route" value="{{ route }}">
+                    <input type="hidden" id="acType" value="{{ ac_type }}">
                     <input type="hidden" id="registration" value="{{ registration }}">
                     <input type="hidden" id="pilot" value="{{ pilot }}">
                 </div>
@@ -553,7 +558,7 @@
             canvas.width = rect.width;
             canvas.height = rect.height;
 
-            ctx.strokeStyle = '#5c6b77';
+            ctx.strokeStyle = '#0d3a5a';
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -565,7 +570,7 @@
 
         function redrawPaths() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#5c6b77';
+            ctx.strokeStyle = '#0d3a5a';
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -700,7 +705,7 @@
             const scaleY = exportCanvas.height / canvas.height;
 
             // Draw the signature scaled
-            exportCtx.strokeStyle = '#5c6b77';
+            exportCtx.strokeStyle = '#0d3a5a';
             exportCtx.lineWidth = 2.5 * Math.min(scaleX, scaleY);
             exportCtx.lineCap = 'round';
             exportCtx.lineJoin = 'round';
@@ -768,6 +773,7 @@
                 flight_date: document.getElementById('flightDate').value,
                 flight_time: document.getElementById('flightTime').value,
                 route: document.getElementById('route').value,
+                ac_type: document.getElementById('acType').value,
                 registration: document.getElementById('registration').value,
                 pilot: document.getElementById('pilot').value,
                 signature_data: signatureData,

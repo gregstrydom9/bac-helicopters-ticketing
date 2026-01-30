@@ -18,7 +18,7 @@
         }
 
         .header {
-            background: #1a365d;
+            background: #1a5a8a;
             color: white;
             padding: 20px;
             display: flex;
@@ -54,7 +54,7 @@
 
         .auth-form h2 {
             margin-bottom: 24px;
-            color: #1a365d;
+            color: #1a5a8a;
         }
 
         .auth-form input {
@@ -69,7 +69,7 @@
         .auth-form button {
             width: 100%;
             padding: 12px;
-            background: #1a365d;
+            background: #1a5a8a;
             color: white;
             border: none;
             border-radius: 8px;
@@ -154,7 +154,7 @@
         }
 
         .btn-primary {
-            background: #1a365d;
+            background: #1a5a8a;
             color: white;
         }
 
@@ -245,7 +245,7 @@
         .stat-item .value {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #1a365d;
+            color: #1a5a8a;
         }
 
         .stat-item .label {
@@ -359,11 +359,11 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Date *</label>
+                            <label>Date of Flight *</label>
                             <input type="date" name="date" required>
                         </div>
                         <div class="form-group">
-                            <label>Time *</label>
+                            <label>ETD (Time) *</label>
                             <input type="time" name="time" required>
                         </div>
                         <div class="form-group">
@@ -374,11 +374,15 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Registration *</label>
+                            <label>A/C Type</label>
+                            <input type="text" name="ac_type" placeholder="e.g., AS350, Bell 407">
+                        </div>
+                        <div class="form-group">
+                            <label>A/C Reg *</label>
                             <input type="text" name="reg" placeholder="e.g., ZS-XXX" required>
                         </div>
                         <div class="form-group">
-                            <label>Pilot *</label>
+                            <label>PIC (Pilot) *</label>
                             <input type="text" name="pilot" placeholder="Pilot name" required>
                         </div>
                     </div>

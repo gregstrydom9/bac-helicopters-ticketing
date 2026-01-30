@@ -136,68 +136,27 @@ def write_embedded_logo():
 # =============================================================================
 
 CONDITIONS_OF_CARRIAGE = """
-CONDITIONS OF CARRIAGE FOR PASSENGERS AND BAGGAGE
+CONDITIONS OF CARRIAGE
 
-1. DEFINITIONS
-"Carrier" means BAC Helicopters (Pty) Ltd. "Passenger" means any person, except members of the crew, carried or to be carried in an aircraft pursuant to a Ticket. "Ticket" means the document issued by or on behalf of the Carrier which includes the flight details, conditions of carriage, and notices.
+1. BAC Helicopters CC, hereafter referred to as the operator is a licensed air service operator and the holder of Air service license N1105D and G1106D issued in terms of the provisions of the Air Services Licensing act 1990 (Act 115 of 1990).
 
-2. APPLICABILITY
-These Conditions of Carriage apply to the carriage of passengers and baggage by helicopter services operated by the Carrier.
+2. The operator warrants that it is insured in accordance with regulation 5 of the Domestic Air Service Regulations, 1991, as amended.
 
-3. TICKETS
-3.1 The Ticket is evidence of the contract of carriage between the Carrier and the Passenger.
-3.2 The Ticket is not transferable.
-3.3 The Carrier will provide carriage only to the Passenger named in the Ticket.
+3. The operator, its servants, agents and representatives shall be under no liability for any damage of any kind, in excess of the limitations of the aforesaid regulations, whether caused or occasioned during the carriage of the passengers by air or in connection with the auxiliary incidental to the carriage by air or whether or not caused or occasioned by the act, omission, neglect, gross neglect or default of the operator's servants, agents or representatives.
 
-4. FARES AND CHARGES
-4.1 Fares apply only for carriage from the airport/heliport at the point of origin to the airport/heliport at the point of destination.
-4.2 Fares and charges are subject to change without notice prior to booking confirmation.
+4. The passenger herby indemnifies the operator against any claim or claims for compensation for damage, loss, injury, whether sustained on board the aircraft or in the course of the flight, embark or disembarking, caused directly or indirectly to his/her belongings which indemnity shall extend to the passenger's dependents, estate or any person whomsoever.
 
-5. RESERVATIONS
-5.1 Reservations are not confirmed until ticketed and paid for in full.
-5.2 The Carrier reserves the right to cancel reservations if payment is not received by the specified deadline.
+5. The operator indemnifies the passenger against any damage which the operator or its servants, agents or representatives may suffer through any act or omission of the passenger, however caused.
 
-6. CHECK-IN AND BOARDING
-6.1 Passengers must check in at the designated location at the time specified by the Carrier.
-6.2 The Carrier may refuse carriage if the Passenger fails to arrive at the designated check-in point on time.
-6.3 The Carrier is not liable for loss or expense due to the Passenger's failure to comply with check-in requirements.
+6. The operator undertakes to use its best efforts to carry the passenger and its baggage with reasonable dispatch.
 
-7. REFUSAL AND LIMITATION OF CARRIAGE
-7.1 The Carrier may refuse to carry any Passenger or baggage if:
-(a) Such action is necessary for safety reasons;
-(b) Such action is necessary to comply with applicable laws or regulations;
-(c) The conduct, age, or mental or physical condition of the Passenger is such as to require special assistance;
-(d) The Passenger has previously committed misconduct and the Carrier has reason to believe such conduct may be repeated;
-(e) The Passenger has refused to submit to a security check;
-(f) The Passenger has not paid the applicable fare or charges;
-(g) The Passenger does not have valid travel documents.
+7. The operator reserves the right to refuse the carriage to any person who has acquired a ticket in violation of the operator's tariffs, rules and regulations or has not signed a Passenger Indemnity form.
 
-8. BAGGAGE
-8.1 The Carrier may impose limits on the weight and dimensions of baggage.
-8.2 Excess baggage may be carried subject to payment of additional charges and available space.
-8.3 The Passenger must not include in baggage fragile or perishable items, money, jewelry, precious metals, electronic devices, documents, or other valuables.
+8. The conditions of carriage may not be altered, modified or amended or any provisions be waived by any servant, agent or representative of the operator.
 
-9. DANGEROUS GOODS
-9.1 The Passenger must not carry dangerous goods including but not limited to: compressed gases, corrosives, explosives, flammable liquids and solids, oxidizing materials, poisons, radioactive materials, and other articles that may endanger the safety of the aircraft or persons.
-9.2 The Passenger acknowledges having reviewed the Dangerous Goods information provided.
+Notice: If Passenger's journey involves an ultimate destination or stop in a country other than the country of departure, the provisions of the Warsaw Convention may be applicable. The Convention governs and in most cases limits the liability of operators for death and personal injury and the loss or damage of baggage.
 
-10. LIABILITY OF CARRIER
-10.1 The liability of the Carrier for death or injury to Passengers is governed by applicable law and international conventions.
-10.2 The Carrier is not liable for any illness, injury, or disability including death, attributable to the Passenger's physical condition or aggravation thereof.
-10.3 The Carrier is not liable for damage to baggage resulting from inherent defect, quality, or vice of the baggage.
-
-11. TIME LIMITS ON CLAIMS
-11.1 Claims for damage to baggage must be made in writing within 7 days of receipt.
-11.2 Claims for delay must be made in writing within 21 days from the date the baggage was delivered or should have been delivered.
-
-12. LIMITATION OF ACTIONS
-12.1 Any right to damages shall be extinguished if an action is not brought within two years from the date of arrival or the date on which the aircraft ought to have arrived.
-
-13. GENERAL
-13.1 These Conditions of Carriage and any carriage performed hereunder shall be governed by the laws of the Republic of South Africa.
-13.2 If any provision of these Conditions is found to be invalid, the remaining provisions shall continue to be valid and enforceable.
-
-By signing the ticket, the Passenger acknowledges having read, understood, and agreed to these Conditions of Carriage.
+THE PASSENGER BY ACCEPTANCE OF THIS TICKET ACCEPTS THE CONDITIONS OF CARRIAGE
 """
 
 # =============================================================================
@@ -266,12 +225,35 @@ def generate_qr_code(url):
 
 
 # =============================================================================
+# Ticket Number Counter
+# =============================================================================
+
+TICKET_COUNTER_FILE = BASE_DIR / "ticket_counter.txt"
+
+def get_next_ticket_number():
+    """Get the next sequential ticket number."""
+    try:
+        if TICKET_COUNTER_FILE.exists():
+            current = int(TICKET_COUNTER_FILE.read_text().strip())
+        else:
+            current = 1548  # Starting number to match existing physical tickets
+
+        next_num = current + 1
+        TICKET_COUNTER_FILE.write_text(str(next_num))
+        return next_num
+    except Exception as e:
+        logger.error(f"Error getting ticket number: {e}")
+        # Fallback to timestamp-based number
+        return int(datetime.now().strftime("%H%M%S"))
+
+
+# =============================================================================
 # CSV Manifest Functions
 # =============================================================================
 
 MANIFEST_COLUMNS = [
-    'timestamp', 'name', 'body_weight', 'num_bags', 'bag_weight',
-    'email', 'flight_date', 'flight_time', 'route', 'registration',
+    'ticket_number', 'timestamp', 'name', 'body_weight', 'num_bags', 'bag_weight',
+    'email', 'flight_date', 'flight_time', 'route', 'ac_type', 'registration',
     'pilot', 'dg_ack'
 ]
 
@@ -372,15 +354,16 @@ def get_flight_summary(flight_id):
 
 def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     """
-    Generate a professional A4 one-page PDF ticket.
+    Generate a professional A4 one-page PDF ticket matching physical ticket format.
     Returns the PDF as bytes.
     """
     buffer = io.BytesIO()
     width, height = A4
     c = canvas.Canvas(buffer, pagesize=A4)
 
-    # Colors - matching BAC letterhead grey/silver theme
-    header_color = HexColor("#7a8b99")  # Grey/silver
+    # Colors - matching BAC letterhead blue theme
+    header_color = HexColor("#1a5a8a")  # BAC Blue
+    red_accent = HexColor("#c41e3a")  # Red for ticket number
 
     # Margins
     margin = 15 * mm
@@ -389,19 +372,19 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     y = height - margin
 
     # ==========================================================================
-    # Header Bar with Logo
+    # Header Bar with Logo and Ticket Number
     # ==========================================================================
-    header_height = 25 * mm
+    header_height = 28 * mm
     c.setFillColor(header_color)
     c.rect(0, y - header_height, width, header_height, fill=1, stroke=0)
 
-    # Draw logo (white on dark background)
+    # Draw logo
     logo_data = get_logo_bytes()
     if logo_data:
         try:
             logo_reader = ImageReader(io.BytesIO(logo_data))
-            logo_width = 50 * mm
-            logo_height = 18 * mm
+            logo_width = 55 * mm
+            logo_height = 20 * mm
             c.drawImage(
                 logo_reader,
                 margin,
@@ -413,120 +396,153 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
             )
         except Exception as e:
             logger.error(f"Failed to draw logo: {e}")
-            # Fallback: draw text
             c.setFillColor(white)
             c.setFont("Helvetica-Bold", 18)
-            c.drawString(margin, y - header_height + 8 * mm, "BAC HELICOPTERS")
+            c.drawString(margin, y - header_height + 10 * mm, "BAC HELICOPTERS")
 
-    # Title on the right
+    # Title and Ticket Number on the right
     c.setFillColor(white)
-    c.setFont("Helvetica-Bold", 16)
-    c.drawRightString(width - margin, y - header_height + 9 * mm, "PASSENGER TICKET")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawRightString(width - margin, y - 8 * mm, "PASSENGER TICKET")
 
-    y -= header_height + 8 * mm
+    # Ticket number line
+    c.setStrokeColor(white)
+    c.line(width - margin - 60 * mm, y - 11 * mm, width - margin, y - 11 * mm)
+
+    # Ticket number in red
+    c.setFillColor(red_accent)
+    c.setFont("Helvetica-Bold", 18)
+    ticket_num = data.get('ticket_number', 'N/A')
+    c.drawRightString(width - margin, y - 20 * mm, f"Ticket #: {ticket_num}")
+
+    y -= header_height + 6 * mm
 
     # ==========================================================================
-    # Flight Details Box
+    # Flight Details Box (matching physical ticket layout)
     # ==========================================================================
     c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin, y, "FLIGHT DETAILS")
-    y -= 6 * mm
+    c.setFont("Helvetica-Bold", 11)
 
-    # Draw a light box
-    box_height = 22 * mm
-    c.setStrokeColor(HexColor("#cccccc"))
-    c.setFillColor(HexColor("#f8f9fa"))
-    c.roundRect(margin, y - box_height, content_width, box_height, 3, fill=1, stroke=1)
+    # Create a structured grid like the physical ticket
+    box_height = 32 * mm
+    c.setStrokeColor(HexColor("#333333"))
+    c.setLineWidth(0.5)
+    c.rect(margin, y - box_height, content_width, box_height, fill=0, stroke=1)
 
-    # Flight details text
+    # Interior lines
+    row_height = box_height / 4
+    for i in range(1, 4):
+        c.line(margin, y - (i * row_height), margin + content_width, y - (i * row_height))
+
+    # Vertical divider for two columns in some rows
+    mid_x = margin + content_width / 2
+    c.line(mid_x, y - row_height, mid_x, y - (2 * row_height))  # Only for row 2
+    c.line(mid_x, y - (2 * row_height), mid_x, y - (3 * row_height))  # For row 3
+
+    # Row 1: Name
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#666666"))
+    c.drawString(margin + 3 * mm, y - 4 * mm, "Name:")
+    c.setFillColor(black)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(margin + 18 * mm, y - 4 * mm, data.get('name', ''))
+
+    # Row 2: Date of Issue | Date of Flight
+    row2_y = y - row_height
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#666666"))
+    c.drawString(margin + 3 * mm, row2_y - 4 * mm, "Date of Issue:")
+    c.drawString(mid_x + 3 * mm, row2_y - 4 * mm, "Date of Flight:")
     c.setFillColor(black)
     c.setFont("Helvetica", 10)
-    details_y = y - 6 * mm
-    col1_x = margin + 5 * mm
-    col2_x = margin + content_width / 2
+    issue_date = data.get('timestamp', '').split(' ')[0] if data.get('timestamp') else ''
+    c.drawString(margin + 28 * mm, row2_y - 4 * mm, issue_date)
+    c.drawString(mid_x + 30 * mm, row2_y - 4 * mm, data.get('flight_date', ''))
 
-    c.drawString(col1_x, details_y, f"Date: {data.get('flight_date', '')}")
-    c.drawString(col2_x, details_y, f"Time: {data.get('flight_time', '')}")
+    # Row 3: A/C Type + Reg | ETD
+    row3_y = y - (2 * row_height)
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#666666"))
+    c.drawString(margin + 3 * mm, row3_y - 4 * mm, "A/C Type:")
+    c.drawString(margin + 50 * mm, row3_y - 4 * mm, "A/C Reg:")
+    c.drawString(mid_x + 3 * mm, row3_y - 4 * mm, "ETD:")
+    c.setFillColor(black)
+    c.setFont("Helvetica", 10)
+    c.drawString(margin + 22 * mm, row3_y - 4 * mm, data.get('ac_type', ''))
+    c.drawString(margin + 68 * mm, row3_y - 4 * mm, data.get('registration', ''))
+    c.drawString(mid_x + 15 * mm, row3_y - 4 * mm, data.get('flight_time', ''))
 
-    details_y -= 5 * mm
-    c.drawString(col1_x, details_y, f"Route: {data.get('route', '')}")
-    c.drawString(col2_x, details_y, f"Registration: {data.get('registration', '')}")
+    # Row 4: Route | PIC
+    row4_y = y - (3 * row_height)
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#666666"))
+    c.drawString(margin + 3 * mm, row4_y - 4 * mm, "Route:")
+    c.drawString(mid_x + 3 * mm, row4_y - 4 * mm, "PIC:")
+    c.setFillColor(black)
+    c.setFont("Helvetica", 10)
+    c.drawString(margin + 18 * mm, row4_y - 4 * mm, data.get('route', ''))
+    c.drawString(mid_x + 15 * mm, row4_y - 4 * mm, data.get('pilot', ''))
 
-    details_y -= 5 * mm
-    c.drawString(col1_x, details_y, f"Pilot: {data.get('pilot', '')}")
-
-    y -= box_height + 8 * mm
+    y -= box_height + 6 * mm
 
     # ==========================================================================
-    # Passenger Details
+    # Weight Details Box
     # ==========================================================================
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin, y, "PASSENGER DETAILS")
-    y -= 6 * mm
-
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(margin, y, f"Name: {data.get('name', '')}")
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(black)
+    c.drawString(margin, y, "WEIGHT DECLARATION")
     y -= 5 * mm
 
-    c.setFont("Helvetica", 9)
-    c.drawString(margin, y, f"Email: {data.get('email', '')}")
-    y -= 8 * mm
+    weight_box_height = 14 * mm
+    c.setStrokeColor(HexColor("#333333"))
+    c.rect(margin, y - weight_box_height, content_width, weight_box_height, fill=0, stroke=1)
 
-    # Weight information box
-    weight_box_height = 18 * mm
-    c.setStrokeColor(HexColor("#cccccc"))
-    c.setFillColor(HexColor("#f8f9fa"))
-    c.roundRect(margin, y - weight_box_height, content_width, weight_box_height, 3, fill=1, stroke=1)
-
-    # Weight values inside box
-    c.setFillColor(black)
-    weight_y = y - 6 * mm
+    # Three columns for weights
     col_width = content_width / 3
+    c.line(margin + col_width, y, margin + col_width, y - weight_box_height)
+    c.line(margin + 2 * col_width, y, margin + 2 * col_width, y - weight_box_height)
 
-    # Body Weight
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#718096"))
-    c.drawString(margin + 5 * mm, weight_y, "BODY WEIGHT")
+    # Weight of PAX
+    c.setFont("Helvetica", 7)
+    c.setFillColor(HexColor("#666666"))
+    c.drawCentredString(margin + col_width / 2, y - 4 * mm, "WEIGHT OF PAX")
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin + 5 * mm, weight_y - 5 * mm, f"{data.get('body_weight', '')} kg")
+    c.drawCentredString(margin + col_width / 2, y - 10 * mm, f"{data.get('body_weight', '')} kg")
 
-    # Number of Bags
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#718096"))
-    c.drawString(margin + col_width + 5 * mm, weight_y, "BAGS")
+    # No. of Bag Items
+    c.setFont("Helvetica", 7)
+    c.setFillColor(HexColor("#666666"))
+    c.drawCentredString(margin + col_width + col_width / 2, y - 4 * mm, "NO OF BAG ITEMS")
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin + col_width + 5 * mm, weight_y - 5 * mm, f"{data.get('num_bags', '0')}")
+    c.drawCentredString(margin + col_width + col_width / 2, y - 10 * mm, f"{data.get('num_bags', '0')}")
 
-    # Bag Weight
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#718096"))
-    c.drawString(margin + 2 * col_width + 5 * mm, weight_y, "BAG WEIGHT")
+    # Weight of Bag
+    c.setFont("Helvetica", 7)
+    c.setFillColor(HexColor("#666666"))
+    c.drawCentredString(margin + 2 * col_width + col_width / 2, y - 4 * mm, "WEIGHT OF BAG")
     c.setFillColor(black)
     c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin + 2 * col_width + 5 * mm, weight_y - 5 * mm, f"{data.get('bag_weight', '0')} kg")
+    c.drawCentredString(margin + 2 * col_width + col_width / 2, y - 10 * mm, f"{data.get('bag_weight', '0')} kg")
 
     y -= weight_box_height + 3 * mm
 
-    # Weight disclaimer
     c.setFont("Helvetica-Oblique", 7)
-    c.setFillColor(HexColor("#718096"))
+    c.setFillColor(HexColor("#666666"))
     c.drawString(margin, y, "Weights declared by passenger. To be verified at check-in.")
-
-    c.setFillColor(black)
     y -= 8 * mm
 
     # ==========================================================================
     # Signature Block
     # ==========================================================================
-    c.setFont("Helvetica-Bold", 12)
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(black)
     c.drawString(margin, y, "PASSENGER SIGNATURE")
     y -= 3 * mm
 
-    sig_width = 95 * mm
-    sig_height = 42 * mm
+    sig_width = 80 * mm
+    sig_height = 30 * mm
 
     if signature_bytes:
         try:
@@ -544,22 +560,36 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
 
     # Signature line
     c.setStrokeColor(black)
-    c.line(margin, y - sig_height - 2 * mm, margin + sig_width, y - sig_height - 2 * mm)
+    c.line(margin, y - sig_height - 1 * mm, margin + sig_width, y - sig_height - 1 * mm)
 
-    # Timestamp and DG ack next to signature
+    # Info next to signature
     c.setFont("Helvetica", 8)
-    info_x = margin + sig_width + 10 * mm
+    info_x = margin + sig_width + 8 * mm
     info_y = y - 5 * mm
 
     c.drawString(info_x, info_y, f"Signed: {data.get('timestamp', '')}")
-    info_y -= 4 * mm
+    info_y -= 5 * mm
+    c.drawString(info_x, info_y, f"Email: {data.get('email', '')}")
+    info_y -= 5 * mm
+    dg_ack = "Yes" if data.get('dg_ack') == 'True' else "No"
+    c.drawString(info_x, info_y, f"DG Acknowledged: {dg_ack}")
+    info_y -= 5 * mm
+    c.drawString(info_x, info_y, "Conditions Accepted: Yes")
 
-    dg_ack = "Yes" if data.get('dg_ack') else "No"
-    c.drawString(info_x, info_y, f"Dangerous Goods Acknowledged: {dg_ack}")
-    info_y -= 4 * mm
-    c.drawString(info_x, info_y, f"Conditions Accepted: Yes")
+    y -= sig_height + 8 * mm
 
-    y -= sig_height + 12 * mm
+    # ==========================================================================
+    # Acceptance Statement (like on physical ticket)
+    # ==========================================================================
+    c.setFillColor(header_color)
+    accept_box_height = 10 * mm
+    c.rect(margin, y - accept_box_height, content_width, accept_box_height, fill=1, stroke=0)
+
+    c.setFillColor(white)
+    c.setFont("Helvetica-BoldOblique", 8)
+    c.drawCentredString(width / 2, y - 6 * mm, "THE PASSENGER BY ACCEPTANCE OF THIS TICKET ACCEPTS THE CONDITIONS OF CARRIAGE")
+
+    y -= accept_box_height + 6 * mm
 
     # ==========================================================================
     # Conditions of Carriage (Two columns, auto-fit)
@@ -925,6 +955,7 @@ def passenger_form():
         flight_date=request.args.get('date', ''),
         flight_time=request.args.get('time', ''),
         route=request.args.get('route', ''),
+        ac_type=request.args.get('ac_type', ''),
         registration=request.args.get('reg', ''),
         pilot=request.args.get('pilot', ''),
         conditions=CONDITIONS_OF_CARRIAGE
@@ -989,10 +1020,15 @@ def submit_ticket():
             'flight_date': data.get('flight_date', ''),
             'flight_time': data.get('flight_time', ''),
             'route': data.get('route', ''),
+            'ac_type': data.get('ac_type', ''),
             'registration': data.get('registration', ''),
             'pilot': data.get('pilot', ''),
             'dg_ack': str(data.get('dg_acknowledged', False)),
         }
+
+        # Generate ticket number
+        ticket_number = get_next_ticket_number()
+        passenger_data['ticket_number'] = str(ticket_number)
 
         # Generate flight ID
         flight_id = generate_flight_id(
@@ -1065,6 +1101,7 @@ def create_link():
     flight_date = request.form.get('date', '').strip()
     flight_time = request.form.get('time', '').strip()
     route = request.form.get('route', '').strip()
+    ac_type = request.form.get('ac_type', '').strip()
     registration = request.form.get('reg', '').strip()
     pilot = request.form.get('pilot', '').strip()
     recipient_emails = request.form.get('emails', '').strip()
@@ -1079,6 +1116,7 @@ def create_link():
         'date': flight_date,
         'time': flight_time,
         'route': route,
+        'ac_type': ac_type,
         'reg': registration,
         'pilot': pilot
     }
@@ -1099,10 +1137,11 @@ You have been sent a flight booking link for BAC Helicopters.
 
 Flight Details:
 Date: {flight_date}
-Time: {flight_time}
+ETD: {flight_time}
 Route: {route}
-Aircraft: {registration}
-Pilot: {pilot}
+A/C Type: {ac_type}
+A/C Reg: {registration}
+PIC: {pilot}
 
 Click the link below or scan the attached QR code to complete your ticket:
 {share_url}
