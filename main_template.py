@@ -680,18 +680,99 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
 # Email Functions
 # =============================================================================
 
+def get_sendgrid_api_key():
+    """Get SendGrid API key from environment."""
+    return os.environ.get("SENDGRID_API_KEY", "")
+
+
+def is_sendgrid_configured():
+    """Check if SendGrid is configured."""
+    return bool(get_sendgrid_api_key())
+
+
 def is_smtp_configured():
     """Check if SMTP is configured."""
     return bool(get_smtp_host() and get_smtp_user() and get_smtp_password())
 
 
+def send_email_sendgrid(to_emails, subject, body, attachments=None):
+    """
+    Send email via SendGrid HTTP API.
+    attachments: list of (filename, bytes, mimetype) tuples
+    """
+    api_key = get_sendgrid_api_key()
+    if not api_key:
+        logger.error("SendGrid API key not configured")
+        return False
+
+    # Ensure to_emails is a list
+    if isinstance(to_emails, str):
+        to_emails = [to_emails]
+
+    # Build personalizations (recipients)
+    personalizations = [{
+        "to": [{"email": email.strip()} for email in to_emails if email.strip()]
+    }]
+
+    # Build the email payload
+    payload = {
+        "personalizations": personalizations,
+        "from": {"email": get_from_email(), "name": "BAC Helicopters"},
+        "subject": subject,
+        "content": [{"type": "text/plain", "value": body}]
+    }
+
+    # Add attachments if any
+    if attachments:
+        payload["attachments"] = []
+        for filename, data, mimetype in attachments:
+            payload["attachments"].append({
+                "content": base64.b64encode(data).decode('utf-8'),
+                "filename": filename,
+                "type": mimetype,
+                "disposition": "attachment"
+            })
+
+    # Send via SendGrid API
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        logger.info(f"Sending email via SendGrid to {to_emails}")
+        response = requests.post(
+            "https://api.sendgrid.com/v3/mail/send",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+
+        if response.status_code in [200, 202]:
+            logger.info(f"Email sent successfully via SendGrid to {to_emails}")
+            return True
+        else:
+            logger.error(f"SendGrid error: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"SendGrid request failed: {type(e).__name__}: {e}")
+        return False
+
+
 def send_email(to_emails, subject, body, attachments=None):
     """
     Send an email with optional attachments.
-    If SMTP not configured, save as .eml file.
+    Tries SendGrid first, then SMTP, then saves as .eml file.
 
     attachments: list of (filename, bytes, mimetype) tuples
     """
+    # Try SendGrid first (works on Railway)
+    if is_sendgrid_configured():
+        if send_email_sendgrid(to_emails, subject, body, attachments):
+            return True
+        logger.warning("SendGrid failed, trying SMTP fallback...")
+
+    # Build MIME message for SMTP or .eml fallback
     msg = MIMEMultipart()
     msg['From'] = get_from_email()
     msg['To'] = ', '.join(to_emails) if isinstance(to_emails, list) else to_emails
@@ -1010,10 +1091,13 @@ def debug_logo():
 
 @app.route('/debug/smtp')
 def debug_smtp():
-    """Debug endpoint to check SMTP configuration."""
+    """Debug endpoint to check email configuration."""
     smtp_user = get_smtp_user()
     smtp_password = get_smtp_password()
+    sendgrid_key = get_sendgrid_api_key()
     info = {
+        'sendgrid_configured': is_sendgrid_configured(),
+        'sendgrid_api_key': sendgrid_key[:10] + '***' if sendgrid_key else '(not set)',
         'smtp_configured': is_smtp_configured(),
         'smtp_host': get_smtp_host() or '(not set)',
         'smtp_port': get_smtp_port(),
@@ -1029,13 +1113,13 @@ def debug_smtp():
 
 @app.route('/debug/test_email')
 def test_email():
-    """Send a test email to verify SMTP is working - shows detailed errors."""
+    """Send a test email to verify email is working."""
     test_to = request.args.get('to', '')
     if not test_to:
         return jsonify({'error': 'Please provide ?to=email@example.com'}), 400
 
-    if not is_smtp_configured():
-        return jsonify({'error': 'SMTP not configured'}), 400
+    if not is_sendgrid_configured() and not is_smtp_configured():
+        return jsonify({'error': 'Neither SendGrid nor SMTP configured'}), 400
 
     subject = "BAC Helicopters - Test Email"
     body = f"""This is a test email from BAC Helicopters Ticketing System.
@@ -1044,6 +1128,14 @@ If you received this, email sending is working correctly!
 
 Sent at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 """
+
+    # Try SendGrid first
+    if is_sendgrid_configured():
+        success = send_email_sendgrid([test_to], subject, body)
+        if success:
+            return jsonify({'success': True, 'message': f'Test email sent to {test_to} via SendGrid'})
+        else:
+            return jsonify({'success': False, 'message': 'SendGrid failed - check logs'})
 
     # Try sending with detailed error capture
     smtp_host = get_smtp_host()
