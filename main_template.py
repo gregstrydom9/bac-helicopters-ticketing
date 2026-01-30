@@ -1014,7 +1014,7 @@ def debug_smtp():
 
 @app.route('/debug/test_email')
 def test_email():
-    """Send a test email to verify SMTP is working."""
+    """Send a test email to verify SMTP is working - shows detailed errors."""
     test_to = request.args.get('to', '')
     if not test_to:
         return jsonify({'error': 'Please provide ?to=email@example.com'}), 400
@@ -1030,14 +1030,47 @@ If you received this, email sending is working correctly!
 Sent at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 """
 
+    # Try sending with detailed error capture
+    smtp_host = get_smtp_host()
+    smtp_port = get_smtp_port()
+    smtp_user = get_smtp_user()
+    smtp_password = get_smtp_password()
+
     try:
-        result = send_email([test_to], subject, body)
-        if result:
-            return jsonify({'success': True, 'message': f'Test email sent to {test_to}'})
-        else:
-            return jsonify({'success': False, 'message': 'Email saved to outbox (SMTP failed)'})
+        from email.mime.text import MIMEText
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = get_from_email()
+        msg['To'] = test_to
+
+        logger.info(f"Test email: Connecting to {smtp_host}:{smtp_port}")
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+            server.set_debuglevel(1)  # Enable debug output
+            logger.info("Test email: Connected, starting TLS...")
+            server.starttls()
+            logger.info(f"Test email: TLS started, logging in as {smtp_user}...")
+            server.login(smtp_user, smtp_password)
+            logger.info("Test email: Login successful, sending...")
+            server.send_message(msg)
+            logger.info(f"Test email: Sent successfully to {test_to}")
+
+        return jsonify({'success': True, 'message': f'Test email sent to {test_to}'})
+
+    except smtplib.SMTPAuthenticationError as e:
+        error_msg = f"Authentication failed: {e.smtp_code} - {e.smtp_error.decode() if isinstance(e.smtp_error, bytes) else e.smtp_error}"
+        logger.error(f"Test email auth error: {error_msg}")
+        return jsonify({
+            'success': False,
+            'error': 'Authentication failed',
+            'details': error_msg,
+            'hint': 'Check that: 1) 2FA is enabled on Gmail, 2) App Password was generated correctly, 3) Password has no spaces'
+        })
+    except smtplib.SMTPException as e:
+        logger.error(f"Test email SMTP error: {e}")
+        return jsonify({'success': False, 'error': 'SMTP Error', 'details': str(e)})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Test email error: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'error': type(e).__name__, 'details': str(e)})
 
 
 @app.route('/docs/dg')
