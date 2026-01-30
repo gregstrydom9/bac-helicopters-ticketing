@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            background: #f5f5f5;
             min-height: 100vh;
             padding: 20px;
         }
@@ -22,26 +22,37 @@
             max-width: 600px;
             margin: 0 auto;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
             overflow: hidden;
+            border-top: 4px solid #7a8b99;
         }
 
         .header {
-            background: #1a365d;
-            color: white;
+            background: white;
             padding: 24px;
             text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header-logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 12px;
         }
 
         .header h1 {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
+            color: #7a8b99;
+            font-weight: 400;
             margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .header p {
-            opacity: 0.8;
-            font-size: 0.9rem;
+            color: #999;
+            font-size: 0.85rem;
         }
 
         .content {
@@ -53,12 +64,14 @@
         }
 
         .section-title {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: #1a365d;
+            color: #7a8b99;
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 2px solid #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .flight-details {
@@ -118,8 +131,8 @@
 
         input:focus {
             outline: none;
-            border-color: #4299e1;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+            border-color: #7a8b99;
+            box-shadow: 0 0 0 3px rgba(122, 139, 153, 0.2);
         }
 
         input:read-only {
@@ -294,7 +307,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: white;
-            background: #1a365d;
+            background: #7a8b99;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -302,7 +315,7 @@
         }
 
         .submit-btn:hover {
-            background: #2c5282;
+            background: #5c6b77;
         }
 
         .submit-btn:active {
@@ -381,8 +394,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>BAC Helicopters</h1>
-            <p>Passenger Ticket Registration</p>
+            <img src="/debug/logo" alt="BAC Helicopters" class="header-logo">
+            <h1>Passenger Registration</h1>
+            <p>Please complete all required fields</p>
         </div>
 
         <div class="content" id="formContent">
@@ -539,7 +553,7 @@
             canvas.width = rect.width;
             canvas.height = rect.height;
 
-            ctx.strokeStyle = '#1a365d';
+            ctx.strokeStyle = '#5c6b77';
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -551,7 +565,7 @@
 
         function redrawPaths() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#1a365d';
+            ctx.strokeStyle = '#5c6b77';
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -686,7 +700,7 @@
             const scaleY = exportCanvas.height / canvas.height;
 
             // Draw the signature scaled
-            exportCtx.strokeStyle = '#1a365d';
+            exportCtx.strokeStyle = '#5c6b77';
             exportCtx.lineWidth = 2.5 * Math.min(scaleX, scaleY);
             exportCtx.lineCap = 'round';
             exportCtx.lineJoin = 'round';

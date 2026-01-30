@@ -381,8 +381,8 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     width, height = A4
     c = canvas.Canvas(buffer, pagesize=A4)
 
-    # Colors
-    header_color = HexColor("#1a365d")  # Dark blue
+    # Colors - matching BAC letterhead grey/silver theme
+    header_color = HexColor("#7a8b99")  # Grey/silver
 
     # Margins
     margin = 15 * mm
