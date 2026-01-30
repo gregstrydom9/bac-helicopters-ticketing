@@ -475,76 +475,50 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     c.drawString(margin, y, f"Email: {data.get('email', '')}")
     y -= 8 * mm
 
-    # Two columns: Body Weight | Bag Weight
-    col_width = (content_width - 10 * mm) / 2
-    photo_height = 35 * mm
-    photo_width = col_width - 10 * mm
+    # Weight information box
+    weight_box_height = 18 * mm
+    c.setStrokeColor(HexColor("#cccccc"))
+    c.setFillColor(HexColor("#f8f9fa"))
+    c.roundRect(margin, y - weight_box_height, content_width, weight_box_height, 3, fill=1, stroke=1)
 
-    # Column headers
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(margin, y, "BODY WEIGHT")
-    c.drawString(margin + col_width + 10 * mm, y, "BAG WEIGHT")
-    y -= 5 * mm
+    # Weight values inside box
+    c.setFillColor(black)
+    weight_y = y - 6 * mm
+    col_width = content_width / 3
 
-    # Weight values
-    c.setFont("Helvetica", 10)
-    c.drawString(margin, y, f"{data.get('body_weight', '')} kg")
-    bag_text = f"{data.get('bag_weight', '')} kg ({data.get('num_bags', '')} bag(s))"
-    c.drawString(margin + col_width + 10 * mm, y, bag_text)
-    y -= 5 * mm
+    # Body Weight
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#718096"))
+    c.drawString(margin + 5 * mm, weight_y, "BODY WEIGHT")
+    c.setFillColor(black)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(margin + 5 * mm, weight_y - 5 * mm, f"{data.get('body_weight', '')} kg")
 
-    # Photo placeholders / images
-    photo_y = y - photo_height
+    # Number of Bags
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#718096"))
+    c.drawString(margin + col_width + 5 * mm, weight_y, "BAGS")
+    c.setFillColor(black)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(margin + col_width + 5 * mm, weight_y - 5 * mm, f"{data.get('num_bags', '0')}")
 
-    # Photo 1 (body weight evidence)
-    if photo1_bytes:
-        try:
-            img_reader = ImageReader(io.BytesIO(photo1_bytes))
-            c.drawImage(
-                img_reader,
-                margin,
-                photo_y,
-                width=photo_width,
-                height=photo_height,
-                preserveAspectRatio=True
-            )
-        except Exception as e:
-            logger.error(f"Failed to draw photo 1: {e}")
-    else:
-        c.setStrokeColor(HexColor("#cccccc"))
-        c.setDash(2, 2)
-        c.rect(margin, photo_y, photo_width, photo_height, fill=0, stroke=1)
-        c.setDash()
-        c.setFillColor(HexColor("#999999"))
-        c.setFont("Helvetica-Oblique", 8)
-        c.drawCentredString(margin + photo_width / 2, photo_y + photo_height / 2, "No photo provided")
+    # Bag Weight
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor("#718096"))
+    c.drawString(margin + 2 * col_width + 5 * mm, weight_y, "BAG WEIGHT")
+    c.setFillColor(black)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(margin + 2 * col_width + 5 * mm, weight_y - 5 * mm, f"{data.get('bag_weight', '0')} kg")
 
-    # Photo 2 (bag weight evidence)
-    photo2_x = margin + col_width + 10 * mm
-    if photo2_bytes:
-        try:
-            img_reader = ImageReader(io.BytesIO(photo2_bytes))
-            c.drawImage(
-                img_reader,
-                photo2_x,
-                photo_y,
-                width=photo_width,
-                height=photo_height,
-                preserveAspectRatio=True
-            )
-        except Exception as e:
-            logger.error(f"Failed to draw photo 2: {e}")
-    else:
-        c.setStrokeColor(HexColor("#cccccc"))
-        c.setDash(2, 2)
-        c.rect(photo2_x, photo_y, photo_width, photo_height, fill=0, stroke=1)
-        c.setDash()
-        c.setFillColor(HexColor("#999999"))
-        c.setFont("Helvetica-Oblique", 8)
-        c.drawCentredString(photo2_x + photo_width / 2, photo_y + photo_height / 2, "No photo provided")
+    y -= weight_box_height + 3 * mm
+
+    # Weight disclaimer
+    c.setFont("Helvetica-Oblique", 7)
+    c.setFillColor(HexColor("#718096"))
+    c.drawString(margin, y, "Weights declared by passenger. To be verified at check-in.")
 
     c.setFillColor(black)
-    y = photo_y - 8 * mm
+    y -= 8 * mm
 
     # ==========================================================================
     # Signature Block

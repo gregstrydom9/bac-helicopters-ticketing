@@ -133,6 +133,17 @@
             gap: 12px;
         }
 
+        .weight-disclaimer {
+            background: #e2e8f0;
+            border-left: 3px solid #718096;
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            color: #4a5568;
+            margin-top: 12px;
+            border-radius: 0 6px 6px 0;
+            line-height: 1.4;
+        }
+
         .photo-upload {
             border: 2px dashed #cbd5e0;
             border-radius: 8px;
@@ -442,31 +453,9 @@
                         <label>Total Bag Weight (kg)</label>
                         <input type="number" id="bagWeight" value="0" min="0" max="100" step="0.1" placeholder="kg">
                     </div>
-                </div>
 
-                <!-- Evidence Photos -->
-                <div class="section">
-                    <div class="section-title">Evidence Photos (Optional)</div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Person on Scale</label>
-                            <div class="photo-upload" id="photo1Upload">
-                                <div class="icon">📷</div>
-                                <div class="label">Tap to capture</div>
-                                <input type="file" accept="image/*" capture="environment" id="photo1Input">
-                                <img class="photo-preview" id="photo1Preview" style="display: none;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Bags on Scale</label>
-                            <div class="photo-upload" id="photo2Upload">
-                                <div class="icon">📷</div>
-                                <div class="label">Tap to capture</div>
-                                <input type="file" accept="image/*" capture="environment" id="photo2Input">
-                                <img class="photo-preview" id="photo2Preview" style="display: none;">
-                            </div>
-                        </div>
+                    <div class="weight-disclaimer">
+                        Please ensure the weights provided are accurate. This will be verified at check-in through an actual weigh-in of passenger and baggage.
                     </div>
                 </div>
 
@@ -716,99 +705,6 @@
         }
 
         // =================================================================
-        // Image Compression
-        // =================================================================
-        const MAX_IMAGE_DIM = 1024;
-        const IMAGE_QUALITY = 0.65;
-        const MAX_BASE64_CHARS = 800000;
-
-        function compressImage(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let { width, height } = img;
-
-                        // Scale down if needed
-                        if (width > MAX_IMAGE_DIM || height > MAX_IMAGE_DIM) {
-                            if (width > height) {
-                                height = (height / width) * MAX_IMAGE_DIM;
-                                width = MAX_IMAGE_DIM;
-                            } else {
-                                width = (width / height) * MAX_IMAGE_DIM;
-                                height = MAX_IMAGE_DIM;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, width, height);
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        const dataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
-
-                        if (dataUrl.length > MAX_BASE64_CHARS) {
-                            // Try lower quality
-                            const lowerQuality = canvas.toDataURL('image/jpeg', 0.4);
-                            if (lowerQuality.length > MAX_BASE64_CHARS) {
-                                reject(new Error('Image too large even after compression'));
-                            } else {
-                                resolve(lowerQuality);
-                            }
-                        } else {
-                            resolve(dataUrl);
-                        }
-                    };
-                    img.onerror = () => reject(new Error('Failed to load image'));
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => reject(new Error('Failed to read file'));
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // =================================================================
-        // Photo Upload Handlers
-        // =================================================================
-        let photo1Data = '';
-        let photo2Data = '';
-
-        async function handlePhotoUpload(input, previewId, uploadId, setData) {
-            const file = input.files[0];
-            if (!file) return;
-
-            try {
-                const compressed = await compressImage(file);
-                setData(compressed);
-
-                const preview = document.getElementById(previewId);
-                const upload = document.getElementById(uploadId);
-
-                preview.src = compressed;
-                preview.style.display = 'block';
-                upload.classList.add('has-image');
-                upload.querySelector('.icon').style.display = 'none';
-                upload.querySelector('.label').textContent = 'Tap to change';
-            } catch (err) {
-                showError('Failed to process image: ' + err.message);
-                input.value = '';
-            }
-        }
-
-        document.getElementById('photo1Input').addEventListener('change', function() {
-            handlePhotoUpload(this, 'photo1Preview', 'photo1Upload', (data) => photo1Data = data);
-        });
-
-        document.getElementById('photo2Input').addEventListener('change', function() {
-            handlePhotoUpload(this, 'photo2Preview', 'photo2Upload', (data) => photo2Data = data);
-        });
-
-        // =================================================================
         // Form Submission
         // =================================================================
         function showError(message) {
@@ -848,13 +744,6 @@
             // Get signature
             const signatureData = getSignatureAsJpeg();
 
-            // Check total size
-            const totalBase64 = signatureData.length + photo1Data.length + photo2Data.length;
-            if (totalBase64 > 1200000) {
-                showError('Total image data is too large. Please use smaller photos.');
-                return;
-            }
-
             // Build payload
             const payload = {
                 name: document.getElementById('name').value.trim(),
@@ -868,8 +757,8 @@
                 registration: document.getElementById('registration').value,
                 pilot: document.getElementById('pilot').value,
                 signature_data: signatureData,
-                photo1_data: photo1Data,
-                photo2_data: photo2Data,
+                photo1_data: '',
+                photo2_data: '',
                 dg_acknowledged: document.getElementById('dgAck').checked,
                 conditions_accepted: document.getElementById('conditionsAck').checked
             };
