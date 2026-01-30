@@ -1,9 +1,7 @@
 """
 BAC Helicopters Passenger Ticketing System
 Main Flask Application Template
-
-This file contains the BASE64_LOGO placeholder that will be replaced
-by embed_logo.py to generate main.py
+Version: 1.1.0 - Updated branding and email functionality
 """
 
 import os
