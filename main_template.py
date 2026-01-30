@@ -714,6 +714,21 @@ def send_email(to_emails, subject, body, attachments=None):
         smtp_password = get_smtp_password()
         smtp_use_tls = get_smtp_use_tls()
 
+        # Try SSL on port 465 first (often works when 587 is blocked by hosting providers)
+        try:
+            logger.info(f"Attempting SMTP_SSL connection to {smtp_host}:465")
+            with smtplib.SMTP_SSL(smtp_host, 465, timeout=30) as server:
+                logger.info(f"SSL connected, logging in as {smtp_user}...")
+                server.login(smtp_user, smtp_password)
+                logger.info("Login successful, sending message...")
+                server.send_message(msg)
+            logger.info(f"Email sent successfully via SSL to {to_emails}")
+            return True
+        except Exception as ssl_error:
+            logger.warning(f"SSL connection on port 465 failed: {ssl_error}")
+            logger.info("Falling back to TLS on port 587...")
+
+        # Fall back to TLS on port 587
         try:
             logger.info(f"Connecting to SMTP: {smtp_host}:{smtp_port}")
             with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
@@ -1043,9 +1058,27 @@ Sent at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         msg['From'] = get_from_email()
         msg['To'] = test_to
 
+        # Try SSL on port 465 first (often works when 587 is blocked)
+        use_ssl = smtp_port == 465 or request.args.get('ssl') == 'true'
+
+        if use_ssl or smtp_port == 587:
+            # Try port 465 with SSL first
+            try:
+                logger.info(f"Test email: Trying SSL connection to {smtp_host}:465")
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=30) as server:
+                    logger.info(f"Test email: SSL connected, logging in as {smtp_user}...")
+                    server.login(smtp_user, smtp_password)
+                    logger.info("Test email: Login successful, sending...")
+                    server.send_message(msg)
+                    logger.info(f"Test email: Sent successfully to {test_to}")
+                return jsonify({'success': True, 'message': f'Test email sent to {test_to} (via SSL port 465)'})
+            except Exception as ssl_error:
+                logger.warning(f"SSL attempt failed: {ssl_error}, trying TLS on 587...")
+
+        # Fall back to TLS on port 587
         logger.info(f"Test email: Connecting to {smtp_host}:{smtp_port}")
         with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
-            server.set_debuglevel(1)  # Enable debug output
+            server.set_debuglevel(1)
             logger.info("Test email: Connected, starting TLS...")
             server.starttls()
             logger.info(f"Test email: TLS started, logging in as {smtp_user}...")
