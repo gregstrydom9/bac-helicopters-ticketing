@@ -138,7 +138,7 @@ def write_embedded_logo():
 CONDITIONS_OF_CARRIAGE = """
 CONDITIONS OF CARRIAGE
 
-1. BAC Helicopters CC, hereafter referred to as the operator is a licensed air service operator and the holder of Air service license N1105D and G1106D issued in terms of the provisions of the Air Services Licensing act 1990 (Act 115 of 1990).
+1. BAC Helicopters (Pty) Ltd, hereafter referred to as the operator is a licensed air service operator and the holder of Air service license N1105D and G1106D issued in terms of the provisions of the Air Services Licensing act 1990 (Act 115 of 1990).
 
 2. The operator warrants that it is insured in accordance with regulation 5 of the Domestic Air Service Regulations, 1991, as amended.
 
@@ -669,7 +669,7 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     footer_y = inner_margin + 4 * mm
     c.setFont("Helvetica", 6)
     c.setFillColor(medium_gray)
-    c.drawCentredString(width / 2, footer_y, "BAC Helicopters CC  •  Air Service License N1105D & G1106D  •  This ticket is valid only for the flight shown above")
+    c.drawCentredString(width / 2, footer_y, "BAC Helicopters (Pty) Ltd  •  Air Service License N1105D & G1106D  •  This ticket is valid only for the flight shown above")
 
     c.save()
     buffer.seek(0)
@@ -900,7 +900,7 @@ def send_pilot_email(flight_id, flight_summary):
 
     body = f"""═══════════════════════════════════════════════════════════════
                     PASSENGER AND CARGO MANIFEST
-                         BAC HELICOPTERS CC
+                         BAC HELICOPTERS (PTY) LTD
 ═══════════════════════════════════════════════════════════════
 
 FLIGHT DETAILS
@@ -954,7 +954,7 @@ and accepted the Conditions of Carriage.
 
 ──────────────────────────────────────────────────────────────
 Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-BAC Helicopters CC - Air Service License N1105D & G1106D
+BAC Helicopters (Pty) Ltd - Air Service License N1105D & G1106D
 """
 
     # Collect all tickets for this flight
