@@ -355,41 +355,55 @@ def get_flight_summary(flight_id):
 
 def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     """
-    Generate a professional A4 one-page PDF ticket matching physical ticket format.
+    Generate a clean, professional A4 PDF ticket matching BAC letterhead style.
     Returns the PDF as bytes.
     """
     buffer = io.BytesIO()
     width, height = A4
     c = canvas.Canvas(buffer, pagesize=A4)
 
-    # Colors - matching BAC letterhead blue theme
-    header_color = HexColor("#1a5a8a")  # BAC Blue
-    red_accent = HexColor("#c41e3a")  # Red for ticket number
+    # Colors - clean professional palette matching letterhead
+    brand_blue = HexColor("#1a5a8a")
+    light_gray = HexColor("#f5f5f5")
+    medium_gray = HexColor("#666666")
+    border_gray = HexColor("#cccccc")
+    red_accent = HexColor("#c41e3a")
 
-    # Margins
-    margin = 15 * mm
+    # Page margins
+    page_margin = 12 * mm
+
+    # ==========================================================================
+    # Professional Border
+    # ==========================================================================
+    border_width = 1.5
+    c.setStrokeColor(brand_blue)
+    c.setLineWidth(border_width)
+    c.rect(page_margin, page_margin, width - 2 * page_margin, height - 2 * page_margin, fill=0, stroke=1)
+
+    # Inner subtle border
+    c.setStrokeColor(border_gray)
+    c.setLineWidth(0.5)
+    inner_margin = page_margin + 3 * mm
+    c.rect(inner_margin, inner_margin, width - 2 * inner_margin, height - 2 * inner_margin, fill=0, stroke=1)
+
+    # Content area
+    margin = page_margin + 8 * mm
     content_width = width - 2 * margin
-
     y = height - margin
 
     # ==========================================================================
-    # Header Bar with Logo and Ticket Number
+    # Header - Logo and Title
     # ==========================================================================
-    header_height = 28 * mm
-    c.setFillColor(header_color)
-    c.rect(0, y - header_height, width, header_height, fill=1, stroke=0)
-
-    # Draw logo
     logo_data = get_logo_bytes()
     if logo_data:
         try:
             logo_reader = ImageReader(io.BytesIO(logo_data))
-            logo_width = 55 * mm
-            logo_height = 20 * mm
+            logo_width = 50 * mm
+            logo_height = 18 * mm
             c.drawImage(
                 logo_reader,
                 margin,
-                y - header_height + (header_height - logo_height) / 2,
+                y - logo_height,
                 width=logo_width,
                 height=logo_height,
                 preserveAspectRatio=True,
@@ -397,153 +411,150 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
             )
         except Exception as e:
             logger.error(f"Failed to draw logo: {e}")
-            c.setFillColor(white)
-            c.setFont("Helvetica-Bold", 18)
-            c.drawString(margin, y - header_height + 10 * mm, "BAC HELICOPTERS")
+            c.setFillColor(brand_blue)
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(margin, y - 12 * mm, "BAC HELICOPTERS")
 
-    # Title and Ticket Number on the right
-    c.setFillColor(white)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawRightString(width - margin, y - 8 * mm, "PASSENGER TICKET")
-
-    # Ticket number line
-    c.setStrokeColor(white)
-    c.line(width - margin - 60 * mm, y - 11 * mm, width - margin, y - 11 * mm)
-
-    # Ticket number in red
-    c.setFillColor(red_accent)
+    # Title on the right
+    c.setFillColor(brand_blue)
     c.setFont("Helvetica-Bold", 18)
+    c.drawRightString(width - margin, y - 6 * mm, "PASSENGER TICKET")
+
+    # Underline
+    c.setStrokeColor(brand_blue)
+    c.setLineWidth(1)
+    c.line(width - margin - 70 * mm, y - 9 * mm, width - margin, y - 9 * mm)
+
+    # Ticket number
+    c.setFillColor(red_accent)
+    c.setFont("Helvetica-Bold", 14)
     ticket_num = data.get('ticket_number', 'N/A')
-    c.drawRightString(width - margin, y - 20 * mm, f"Ticket #: {ticket_num}")
+    c.drawRightString(width - margin, y - 16 * mm, f"Ticket #: {ticket_num}")
 
-    y -= header_height + 6 * mm
+    y -= 26 * mm
 
     # ==========================================================================
-    # Flight Details Box (matching physical ticket layout)
+    # Flight Details Section
     # ==========================================================================
-    c.setFillColor(black)
+    # Section divider line
+    c.setStrokeColor(brand_blue)
+    c.setLineWidth(0.75)
+    c.line(margin, y, margin + content_width, y)
+    y -= 6 * mm
+
+    # Two-column layout for flight details
+    col1_x = margin
+    col2_x = margin + content_width / 2 + 5 * mm
+    label_color = medium_gray
+    value_color = black
+
+    # Row 1: Name (full width)
+    c.setFont("Helvetica", 9)
+    c.setFillColor(label_color)
+    c.drawString(col1_x, y, "Passenger Name")
+    c.setFillColor(value_color)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(col1_x, y - 5 * mm, data.get('name', ''))
+    y -= 14 * mm
+
+    # Row 2: Date of Flight | ETD
+    c.setFont("Helvetica", 9)
+    c.setFillColor(label_color)
+    c.drawString(col1_x, y, "Date of Flight")
+    c.drawString(col2_x, y, "ETD")
+    c.setFillColor(value_color)
     c.setFont("Helvetica-Bold", 11)
+    c.drawString(col1_x, y - 5 * mm, data.get('flight_date', ''))
+    c.drawString(col2_x, y - 5 * mm, data.get('flight_time', ''))
+    y -= 14 * mm
 
-    # Create a structured grid like the physical ticket
-    box_height = 32 * mm
-    c.setStrokeColor(HexColor("#333333"))
-    c.setLineWidth(0.5)
-    c.rect(margin, y - box_height, content_width, box_height, fill=0, stroke=1)
-
-    # Interior lines
-    row_height = box_height / 4
-    for i in range(1, 4):
-        c.line(margin, y - (i * row_height), margin + content_width, y - (i * row_height))
-
-    # Vertical divider for two columns in some rows
-    mid_x = margin + content_width / 2
-    c.line(mid_x, y - row_height, mid_x, y - (2 * row_height))  # Only for row 2
-    c.line(mid_x, y - (2 * row_height), mid_x, y - (3 * row_height))  # For row 3
-
-    # Row 1: Name
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#666666"))
-    c.drawString(margin + 3 * mm, y - 4 * mm, "Name:")
-    c.setFillColor(black)
+    # Row 3: Route | PIC
+    c.setFont("Helvetica", 9)
+    c.setFillColor(label_color)
+    c.drawString(col1_x, y, "Route")
+    c.drawString(col2_x, y, "PIC")
+    c.setFillColor(value_color)
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(margin + 18 * mm, y - 4 * mm, data.get('name', ''))
+    c.drawString(col1_x, y - 5 * mm, data.get('route', ''))
+    c.drawString(col2_x, y - 5 * mm, data.get('pilot', ''))
+    y -= 14 * mm
 
-    # Row 2: Date of Issue | Date of Flight
-    row2_y = y - row_height
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#666666"))
-    c.drawString(margin + 3 * mm, row2_y - 4 * mm, "Date of Issue:")
-    c.drawString(mid_x + 3 * mm, row2_y - 4 * mm, "Date of Flight:")
-    c.setFillColor(black)
-    c.setFont("Helvetica", 10)
-    issue_date = data.get('timestamp', '').split(' ')[0] if data.get('timestamp') else ''
-    c.drawString(margin + 28 * mm, row2_y - 4 * mm, issue_date)
-    c.drawString(mid_x + 30 * mm, row2_y - 4 * mm, data.get('flight_date', ''))
-
-    # Row 3: A/C Type + Reg | ETD
-    row3_y = y - (2 * row_height)
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#666666"))
-    c.drawString(margin + 3 * mm, row3_y - 4 * mm, "A/C Type:")
-    c.drawString(margin + 50 * mm, row3_y - 4 * mm, "A/C Reg:")
-    c.drawString(mid_x + 3 * mm, row3_y - 4 * mm, "ETD:")
-    c.setFillColor(black)
-    c.setFont("Helvetica", 10)
-    c.drawString(margin + 22 * mm, row3_y - 4 * mm, data.get('ac_type', ''))
-    c.drawString(margin + 68 * mm, row3_y - 4 * mm, data.get('registration', ''))
-    c.drawString(mid_x + 15 * mm, row3_y - 4 * mm, data.get('flight_time', ''))
-
-    # Row 4: Route | PIC
-    row4_y = y - (3 * row_height)
-    c.setFont("Helvetica", 8)
-    c.setFillColor(HexColor("#666666"))
-    c.drawString(margin + 3 * mm, row4_y - 4 * mm, "Route:")
-    c.drawString(mid_x + 3 * mm, row4_y - 4 * mm, "PIC:")
-    c.setFillColor(black)
-    c.setFont("Helvetica", 10)
-    c.drawString(margin + 18 * mm, row4_y - 4 * mm, data.get('route', ''))
-    c.drawString(mid_x + 15 * mm, row4_y - 4 * mm, data.get('pilot', ''))
-
-    y -= box_height + 6 * mm
+    # Row 4: A/C Type | A/C Reg
+    c.setFont("Helvetica", 9)
+    c.setFillColor(label_color)
+    c.drawString(col1_x, y, "A/C Type")
+    c.drawString(col2_x, y, "A/C Reg")
+    c.setFillColor(value_color)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(col1_x, y - 5 * mm, data.get('ac_type', ''))
+    c.drawString(col2_x, y - 5 * mm, data.get('registration', ''))
+    y -= 16 * mm
 
     # ==========================================================================
-    # Weight Details Box
+    # Weight Declaration Section
     # ==========================================================================
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(black)
-    c.drawString(margin, y, "WEIGHT DECLARATION")
+    c.setStrokeColor(brand_blue)
+    c.setLineWidth(0.75)
+    c.line(margin, y, margin + content_width, y)
     y -= 5 * mm
 
-    weight_box_height = 14 * mm
-    c.setStrokeColor(HexColor("#333333"))
-    c.rect(margin, y - weight_box_height, content_width, weight_box_height, fill=0, stroke=1)
-
-    # Three columns for weights
-    col_width = content_width / 3
-    c.line(margin + col_width, y, margin + col_width, y - weight_box_height)
-    c.line(margin + 2 * col_width, y, margin + 2 * col_width, y - weight_box_height)
-
-    # Weight of PAX
-    c.setFont("Helvetica", 7)
-    c.setFillColor(HexColor("#666666"))
-    c.drawCentredString(margin + col_width / 2, y - 4 * mm, "WEIGHT OF PAX")
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawCentredString(margin + col_width / 2, y - 10 * mm, f"{data.get('body_weight', '')} kg")
-
-    # No. of Bag Items
-    c.setFont("Helvetica", 7)
-    c.setFillColor(HexColor("#666666"))
-    c.drawCentredString(margin + col_width + col_width / 2, y - 4 * mm, "NO OF BAG ITEMS")
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawCentredString(margin + col_width + col_width / 2, y - 10 * mm, f"{data.get('num_bags', '0')}")
-
-    # Weight of Bag
-    c.setFont("Helvetica", 7)
-    c.setFillColor(HexColor("#666666"))
-    c.drawCentredString(margin + 2 * col_width + col_width / 2, y - 4 * mm, "WEIGHT OF BAG")
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawCentredString(margin + 2 * col_width + col_width / 2, y - 10 * mm, f"{data.get('bag_weight', '0')} kg")
-
-    y -= weight_box_height + 3 * mm
-
-    c.setFont("Helvetica-Oblique", 7)
-    c.setFillColor(HexColor("#666666"))
-    c.drawString(margin, y, "Weights declared by passenger. To be verified at check-in.")
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(brand_blue)
+    c.drawString(margin, y, "WEIGHT DECLARATION")
     y -= 8 * mm
 
-    # ==========================================================================
-    # Signature Block
-    # ==========================================================================
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(black)
-    c.drawString(margin, y, "PASSENGER SIGNATURE")
-    y -= 3 * mm
+    # Weight boxes - clean design
+    box_width = (content_width - 10 * mm) / 3
+    box_height = 18 * mm
 
-    sig_width = 80 * mm
-    sig_height = 30 * mm
+    for i, (label, value) in enumerate([
+        ("WEIGHT OF PAX", f"{data.get('body_weight', '')} kg"),
+        ("NO OF BAG ITEMS", f"{data.get('num_bags', '0')}"),
+        ("WEIGHT OF BAG", f"{data.get('bag_weight', '0')} kg")
+    ]):
+        box_x = margin + i * (box_width + 5 * mm)
+
+        # Light background
+        c.setFillColor(light_gray)
+        c.roundRect(box_x, y - box_height, box_width, box_height, 3, fill=1, stroke=0)
+
+        # Border
+        c.setStrokeColor(border_gray)
+        c.setLineWidth(0.5)
+        c.roundRect(box_x, y - box_height, box_width, box_height, 3, fill=0, stroke=1)
+
+        # Label
+        c.setFont("Helvetica", 7)
+        c.setFillColor(medium_gray)
+        c.drawCentredString(box_x + box_width/2, y - 5 * mm, label)
+
+        # Value
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(black)
+        c.drawCentredString(box_x + box_width/2, y - 13 * mm, value)
+
+    y -= box_height + 4 * mm
+
+    c.setFont("Helvetica-Oblique", 7)
+    c.setFillColor(medium_gray)
+    c.drawString(margin, y, "Weights declared by passenger. To be verified at check-in.")
+    y -= 10 * mm
+
+    # ==========================================================================
+    # Signature Section
+    # ==========================================================================
+    c.setStrokeColor(brand_blue)
+    c.setLineWidth(0.75)
+    c.line(margin, y, margin + content_width, y)
+    y -= 5 * mm
+
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(brand_blue)
+    c.drawString(margin, y, "PASSENGER SIGNATURE")
+    y -= 4 * mm
+
+    sig_width = 70 * mm
+    sig_height = 25 * mm
 
     if signature_bytes:
         try:
@@ -561,14 +572,16 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
 
     # Signature line
     c.setStrokeColor(black)
+    c.setLineWidth(0.5)
     c.line(margin, y - sig_height - 1 * mm, margin + sig_width, y - sig_height - 1 * mm)
 
     # Info next to signature
     c.setFont("Helvetica", 8)
-    info_x = margin + sig_width + 8 * mm
-    info_y = y - 5 * mm
+    c.setFillColor(medium_gray)
+    info_x = margin + sig_width + 10 * mm
+    info_y = y - 3 * mm
 
-    c.drawString(info_x, info_y, f"Signed: {data.get('timestamp', '')}")
+    c.drawString(info_x, info_y, f"Date: {data.get('timestamp', '').split(' ')[0] if data.get('timestamp') else ''}")
     info_y -= 5 * mm
     c.drawString(info_x, info_y, f"Email: {data.get('email', '')}")
     info_y -= 5 * mm
@@ -577,168 +590,86 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     info_y -= 5 * mm
     c.drawString(info_x, info_y, "Conditions Accepted: Yes")
 
-    y -= sig_height + 8 * mm
+    y -= sig_height + 10 * mm
 
     # ==========================================================================
-    # Acceptance Statement (like on physical ticket)
+    # Acceptance Banner
     # ==========================================================================
-    c.setFillColor(header_color)
-    accept_box_height = 10 * mm
-    c.rect(margin, y - accept_box_height, content_width, accept_box_height, fill=1, stroke=0)
+    banner_height = 8 * mm
+    c.setFillColor(brand_blue)
+    c.roundRect(margin, y - banner_height, content_width, banner_height, 2, fill=1, stroke=0)
 
     c.setFillColor(white)
-    c.setFont("Helvetica-BoldOblique", 8)
-    c.drawCentredString(width / 2, y - 6 * mm, "THE PASSENGER BY ACCEPTANCE OF THIS TICKET ACCEPTS THE CONDITIONS OF CARRIAGE")
+    c.setFont("Helvetica-Bold", 7)
+    c.drawCentredString(width / 2, y - 5.5 * mm, "THE PASSENGER BY ACCEPTANCE OF THIS TICKET ACCEPTS THE CONDITIONS OF CARRIAGE")
 
-    y -= accept_box_height + 6 * mm
+    y -= banner_height + 8 * mm
 
     # ==========================================================================
-    # Conditions of Carriage (condensed)
+    # Conditions of Carriage (compact two-column)
     # ==========================================================================
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(black)
+    c.setFont("Helvetica-Bold", 8)
+    c.setFillColor(brand_blue)
     c.drawString(margin, y, "CONDITIONS OF CARRIAGE")
     y -= 4 * mm
 
-    # Calculate space for conditions (leave room for DG section)
-    dg_section_height = 45 * mm
-    footer_height = 8 * mm
-    conditions_height = y - margin - dg_section_height - footer_height
+    # Calculate remaining space
+    dg_height = 28 * mm
+    footer_height = 10 * mm
+    conditions_height = y - inner_margin - dg_height - footer_height
 
-    # Create paragraph style
     styles = getSampleStyleSheet()
-
-    # Use smaller font for conditions to fit
     cond_style = ParagraphStyle(
         'Conditions',
         parent=styles['Normal'],
-        fontSize=5,
-        leading=5.5,
-        spaceBefore=0,
-        spaceAfter=0,
+        fontSize=5.5,
+        leading=6.5,
+        textColor=medium_gray,
     )
 
-    # Single column conditions text
-    cond_text = CONDITIONS_OF_CARRIAGE.strip().replace('\n', '<br/>')
-    cond_para = Paragraph(cond_text, cond_style)
+    # Two columns for conditions
+    lines = CONDITIONS_OF_CARRIAGE.strip().split('\n')
+    mid = len(lines) // 2
+    col1_text = '<br/>'.join(lines[:mid])
+    col2_text = '<br/>'.join(lines[mid:])
 
-    # Draw in frame
-    frame = Frame(margin, y - conditions_height, content_width, conditions_height,
-                  leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
-    frame.addFromList([cond_para], c)
+    col_width = (content_width - 6 * mm) / 2
+
+    col1_para = Paragraph(col1_text, cond_style)
+    col2_para = Paragraph(col2_text, cond_style)
+
+    frame1 = Frame(margin, y - conditions_height, col_width, conditions_height,
+                   leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    frame2 = Frame(margin + col_width + 6 * mm, y - conditions_height, col_width, conditions_height,
+                   leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+
+    frame1.addFromList([col1_para], c)
+    frame2.addFromList([col2_para], c)
 
     y -= conditions_height + 4 * mm
 
     # ==========================================================================
-    # Dangerous Goods Section (matching physical ticket)
+    # Dangerous Goods Notice (compact)
     # ==========================================================================
-    c.setFont("Helvetica-Bold", 8)
-    c.setFillColor(black)
-    c.drawString(margin, y, "ITEMS NOT ALLOWED ON ANY FLIGHT - DANGEROUS ARTICLES IN BAGGAGE")
+    c.setFont("Helvetica-Bold", 7)
+    c.setFillColor(brand_blue)
+    c.drawString(margin, y, "DANGEROUS GOODS NOT PERMITTED")
+    y -= 3 * mm
+
+    c.setFont("Helvetica", 6)
+    c.setFillColor(medium_gray)
+    dg_text = "Explosives • Compressed Gases • Flammable Liquids/Solids • Corrosives • Oxidizers • Poisons • Radioactive Materials • Lithium Batteries (checked baggage)"
+    c.drawString(margin, y, dg_text)
     y -= 4 * mm
-
-    # Draw DG box
-    dg_box_height = 38 * mm
-    c.setStrokeColor(HexColor("#333333"))
-    c.setLineWidth(0.5)
-    c.rect(margin, y - dg_box_height, content_width, dg_box_height, fill=0, stroke=1)
-
-    # DG content - 3 columns of hazard categories
-    col_width = content_width / 3
-    dg_y = y - 3 * mm
-
-    # Column 1
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(margin + 2 * mm, dg_y, "1. EXPLOSIVES")
-    c.setFont("Helvetica", 5)
-    c.drawString(margin + 2 * mm, dg_y - 3 * mm, "Weapons, ammunition, fireworks, flares")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(margin + 2 * mm, dg_y - 8 * mm, "2. COMPRESSED GASES")
-    c.setFont("Helvetica", 5)
-    c.drawString(margin + 2 * mm, dg_y - 11 * mm, "Butane, oxygen, aqualung cylinders")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(margin + 2 * mm, dg_y - 16 * mm, "3. FLAMMABLE LIQUIDS/SOLIDS")
-    c.setFont("Helvetica", 5)
-    c.drawString(margin + 2 * mm, dg_y - 19 * mm, "Lighter fuel, matches, paints")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(margin + 2 * mm, dg_y - 24 * mm, "4. CORROSIVES")
-    c.setFont("Helvetica", 5)
-    c.drawString(margin + 2 * mm, dg_y - 27 * mm, "Acids, alkalis, wet cell batteries")
-
-    # Column 2
-    col2_x = margin + col_width + 2 * mm
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(col2_x, dg_y, "5. OXIDIZING MATERIALS")
-    c.setFont("Helvetica", 5)
-    c.drawString(col2_x, dg_y - 3 * mm, "Bleaching powder, peroxides")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(col2_x, dg_y - 8 * mm, "6. POISONS & INFECTIOUS")
-    c.setFont("Helvetica", 5)
-    c.drawString(col2_x, dg_y - 11 * mm, "Insecticides, weed-killers, virus materials")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(col2_x, dg_y - 16 * mm, "7. RADIOACTIVE MATERIALS")
-    c.setFont("Helvetica", 5)
-    c.drawString(col2_x, dg_y - 19 * mm, "Brief cases with installed alarms")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(col2_x, dg_y - 24 * mm, "8. MAGNETIC MATERIALS")
-    c.setFont("Helvetica", 5)
-    c.drawString(col2_x, dg_y - 27 * mm, "Magnetized materials, offensive items")
-
-    # Column 3
-    col3_x = margin + 2 * col_width + 2 * mm
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(col3_x, dg_y, "9. LITHIUM BATTERIES")
-    c.setFont("Helvetica", 5)
-    c.drawString(col3_x, dg_y - 3 * mm, "Carry-on baggage only for devices")
-
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(col3_x, dg_y - 8 * mm, "10. OTHER DANGEROUS ITEMS")
-    c.setFont("Helvetica", 5)
-    c.drawString(col3_x, dg_y - 11 * mm, "Mercury, irritating materials")
-
-    # Note at bottom of DG box
-    c.setFont("Helvetica-Oblique", 5)
-    c.setFillColor(HexColor("#444444"))
-    note_y = y - dg_box_height + 3 * mm
-    c.drawString(margin + 2 * mm, note_y, "Medicines and toiletries in limited quantities may be carried. Cargo must be packed in accordance with cargo regulations.")
-
-    # Draw hazard diamond symbols (simplified representations)
-    symbol_size = 8 * mm
-    symbol_y = y - dg_box_height + 12 * mm
-    symbol_x = width - margin - symbol_size - 3 * mm
-
-    # Draw a warning triangle
-    c.setStrokeColor(HexColor("#ff6600"))
-    c.setFillColor(HexColor("#ffcc00"))
-    c.setLineWidth(1)
-
-    # Triangle for "warning"
-    triangle_path = c.beginPath()
-    triangle_path.moveTo(symbol_x + symbol_size/2, symbol_y + symbol_size)
-    triangle_path.lineTo(symbol_x, symbol_y)
-    triangle_path.lineTo(symbol_x + symbol_size, symbol_y)
-    triangle_path.close()
-    c.drawPath(triangle_path, fill=1, stroke=1)
-
-    # Exclamation mark
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 8)
-    c.drawCentredString(symbol_x + symbol_size/2, symbol_y + 2 * mm, "!")
-
-    y -= dg_box_height + 4 * mm
+    c.drawString(margin, y, "Medicines and toiletries in limited quantities permitted. Full DG information provided separately.")
 
     # ==========================================================================
     # Footer
     # ==========================================================================
-    c.setFont("Helvetica-Oblique", 6)
-    c.setFillColor(HexColor("#666666"))
-    c.drawCentredString(width / 2, margin, "This ticket is valid only for the flight details shown above. BAC Helicopters CC - License N1105D & G1106D")
+    footer_y = inner_margin + 4 * mm
+    c.setFont("Helvetica", 6)
+    c.setFillColor(medium_gray)
+    c.drawCentredString(width / 2, footer_y, "BAC Helicopters CC  •  Air Service License N1105D & G1106D  •  This ticket is valid only for the flight shown above")
 
     c.save()
     buffer.seek(0)
