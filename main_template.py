@@ -670,15 +670,23 @@ def send_email(to_emails, subject, body, attachments=None):
 
     if is_smtp_configured():
         try:
+            logger.info(f"Connecting to SMTP: {SMTP_HOST}:{SMTP_PORT}")
             with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+                logger.info("SMTP connected, starting TLS...")
                 if SMTP_USE_TLS:
                     server.starttls()
+                logger.info(f"Logging in as {SMTP_USER}...")
                 server.login(SMTP_USER, SMTP_PASSWORD)
+                logger.info("Login successful, sending message...")
                 server.send_message(msg)
-            logger.info(f"Email sent to {to_emails}")
+            logger.info(f"Email sent successfully to {to_emails}")
             return True
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP Authentication failed: {e}")
+        except smtplib.SMTPException as e:
+            logger.error(f"SMTP error: {e}")
         except Exception as e:
-            logger.error(f"Failed to send email: {e}")
+            logger.error(f"Failed to send email: {type(e).__name__}: {e}")
             # Fall through to save as .eml
 
     # Save as .eml file
@@ -888,6 +896,21 @@ def debug_logo():
         return f"No logo found at {logo_path}", 404
 
     return Response(logo_bytes, mimetype='image/png')
+
+
+@app.route('/debug/smtp')
+def debug_smtp():
+    """Debug endpoint to check SMTP configuration."""
+    info = {
+        'smtp_configured': is_smtp_configured(),
+        'smtp_host': SMTP_HOST or '(not set)',
+        'smtp_port': SMTP_PORT,
+        'smtp_user': SMTP_USER[:3] + '***' if SMTP_USER else '(not set)',
+        'smtp_password': '***' if SMTP_PASSWORD else '(not set)',
+        'from_email': FROM_EMAIL or '(not set)',
+        'smtp_use_tls': SMTP_USE_TLS,
+    }
+    return jsonify(info)
 
 
 @app.route('/docs/dg')
