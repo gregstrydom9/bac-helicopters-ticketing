@@ -670,7 +670,7 @@ def send_email(to_emails, subject, body, attachments=None):
 
     if is_smtp_configured():
         try:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
                 if SMTP_USE_TLS:
                     server.starttls()
                 server.login(SMTP_USER, SMTP_PASSWORD)
@@ -1074,6 +1074,7 @@ def create_link():
     if recipient_emails:
         emails = [e.strip() for e in re.split(r'[,;]', recipient_emails) if e.strip()]
         if emails:
+            logger.info(f"Sending flight link to {len(emails)} recipients...")
             subject = f"BAC Helicopters Flight Link — {flight_date} {route}"
             body = f"""Hello,
 
@@ -1094,8 +1095,10 @@ BAC Helicopters
 """
             qr_bytes = base64.b64decode(qr_base64)
             attachments = [('flight_qr.png', qr_bytes, 'image/png')]
-            send_email(emails, subject, body, attachments)
+            email_sent = send_email(emails, subject, body, attachments)
+            logger.info(f"Email send result: {email_sent}")
 
+    logger.info(f"Flight link created: {share_url}")
     return jsonify({
         'success': True,
         'url': share_url,
