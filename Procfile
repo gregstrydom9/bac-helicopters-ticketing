@@ -1,1 +1,1 @@
-web: python main_template.py
+web: gunicorn main_template:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
