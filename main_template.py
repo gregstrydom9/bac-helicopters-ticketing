@@ -60,14 +60,27 @@ MANIFEST_DIR.mkdir(exist_ok=True)
 OUTBOX_DIR.mkdir(exist_ok=True)
 DOCS_DIR.mkdir(exist_ok=True)
 
-# Environment variables
-SMTP_HOST = os.environ.get("SMTP_HOST", "")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-SMTP_USER = os.environ.get("SMTP_USER", "")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
-FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@bachelicopters.com")
-PILOT_EMAIL = os.environ.get("PILOT_EMAIL", "")
+# Environment variables - accessed via functions to ensure fresh reads
+def get_smtp_host():
+    return os.environ.get("SMTP_HOST", "")
+
+def get_smtp_port():
+    return int(os.environ.get("SMTP_PORT", "587"))
+
+def get_smtp_user():
+    return os.environ.get("SMTP_USER", "")
+
+def get_smtp_password():
+    return os.environ.get("SMTP_PASSWORD", "")
+
+def get_smtp_use_tls():
+    return os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
+
+def get_from_email():
+    return os.environ.get("FROM_EMAIL", "noreply@bachelicopters.com")
+
+def get_pilot_email():
+    return os.environ.get("PILOT_EMAIL", "")
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "")
 
 # SharePoint config
@@ -643,7 +656,7 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
 
 def is_smtp_configured():
     """Check if SMTP is configured."""
-    return bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD)
+    return bool(get_smtp_host() and get_smtp_user() and get_smtp_password())
 
 
 def send_email(to_emails, subject, body, attachments=None):
@@ -654,7 +667,7 @@ def send_email(to_emails, subject, body, attachments=None):
     attachments: list of (filename, bytes, mimetype) tuples
     """
     msg = MIMEMultipart()
-    msg['From'] = FROM_EMAIL
+    msg['From'] = get_from_email()
     msg['To'] = ', '.join(to_emails) if isinstance(to_emails, list) else to_emails
     msg['Subject'] = subject
 
@@ -669,14 +682,20 @@ def send_email(to_emails, subject, body, attachments=None):
             msg.attach(part)
 
     if is_smtp_configured():
+        smtp_host = get_smtp_host()
+        smtp_port = get_smtp_port()
+        smtp_user = get_smtp_user()
+        smtp_password = get_smtp_password()
+        smtp_use_tls = get_smtp_use_tls()
+
         try:
-            logger.info(f"Connecting to SMTP: {SMTP_HOST}:{SMTP_PORT}")
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+            logger.info(f"Connecting to SMTP: {smtp_host}:{smtp_port}")
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
                 logger.info("SMTP connected, starting TLS...")
-                if SMTP_USE_TLS:
+                if smtp_use_tls:
                     server.starttls()
-                logger.info(f"Logging in as {SMTP_USER}...")
-                server.login(SMTP_USER, SMTP_PASSWORD)
+                logger.info(f"Logging in as {smtp_user}...")
+                server.login(smtp_user, smtp_password)
                 logger.info("Login successful, sending message...")
                 server.send_message(msg)
             logger.info(f"Email sent successfully to {to_emails}")
@@ -741,7 +760,8 @@ BAC Helicopters
 
 def send_pilot_email(flight_id, flight_summary):
     """Send manifest summary to pilot with all tickets."""
-    if not PILOT_EMAIL:
+    pilot_email = get_pilot_email()
+    if not pilot_email:
         logger.warning("PILOT_EMAIL not configured, skipping pilot notification")
         return
 
@@ -784,7 +804,7 @@ PASSENGER LIST:
         zip_buffer.seek(0)
         attachments.append((f"tickets_{flight_id}.zip", zip_buffer.getvalue(), "application/zip"))
 
-    send_email([PILOT_EMAIL], subject, body, attachments)
+    send_email([pilot_email], subject, body, attachments)
 
 
 # =============================================================================
@@ -901,14 +921,16 @@ def debug_logo():
 @app.route('/debug/smtp')
 def debug_smtp():
     """Debug endpoint to check SMTP configuration."""
+    smtp_user = get_smtp_user()
+    smtp_password = get_smtp_password()
     info = {
         'smtp_configured': is_smtp_configured(),
-        'smtp_host': SMTP_HOST or '(not set)',
-        'smtp_port': SMTP_PORT,
-        'smtp_user': SMTP_USER[:3] + '***' if SMTP_USER else '(not set)',
-        'smtp_password': '***' if SMTP_PASSWORD else '(not set)',
-        'from_email': FROM_EMAIL or '(not set)',
-        'smtp_use_tls': SMTP_USE_TLS,
+        'smtp_host': get_smtp_host() or '(not set)',
+        'smtp_port': get_smtp_port(),
+        'smtp_user': smtp_user[:3] + '***' if smtp_user else '(not set)',
+        'smtp_password': '***' if smtp_password else '(not set)',
+        'from_email': get_from_email() or '(not set)',
+        'smtp_use_tls': get_smtp_use_tls(),
     }
     return jsonify(info)
 
