@@ -324,6 +324,7 @@ def get_flight_summary(flight_id):
             'date': manifest[0].get('flight_date', ''),
             'time': manifest[0].get('flight_time', ''),
             'route': manifest[0].get('route', ''),
+            'ac_type': manifest[0].get('ac_type', ''),
             'registration': manifest[0].get('registration', ''),
             'pilot': manifest[0].get('pilot', ''),
         }
@@ -592,60 +593,152 @@ def create_ticket_pdf(data, signature_bytes, photo1_bytes, photo2_bytes):
     y -= accept_box_height + 6 * mm
 
     # ==========================================================================
-    # Conditions of Carriage (Two columns, auto-fit)
+    # Conditions of Carriage (condensed)
     # ==========================================================================
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(black)
     c.drawString(margin, y, "CONDITIONS OF CARRIAGE")
-    y -= 5 * mm
+    y -= 4 * mm
 
-    # Calculate remaining height
-    footer_height = 12 * mm
-    remaining_height = y - margin - footer_height
+    # Calculate space for conditions (leave room for DG section)
+    dg_section_height = 45 * mm
+    footer_height = 8 * mm
+    conditions_height = y - margin - dg_section_height - footer_height
 
     # Create paragraph style
     styles = getSampleStyleSheet()
 
-    # Try different font sizes to fit
-    for font_size in [6, 5.5, 5, 4.5, 4]:
-        cond_style = ParagraphStyle(
-            'Conditions',
-            parent=styles['Normal'],
-            fontSize=font_size,
-            leading=font_size * 1.2,
-            spaceBefore=1,
-            spaceAfter=1,
-        )
+    # Use smaller font for conditions to fit
+    cond_style = ParagraphStyle(
+        'Conditions',
+        parent=styles['Normal'],
+        fontSize=5,
+        leading=5.5,
+        spaceBefore=0,
+        spaceAfter=0,
+    )
 
-        # Split conditions into two halves
-        lines = CONDITIONS_OF_CARRIAGE.strip().split('\n')
-        mid = len(lines) // 2
-        col1_text = '\n'.join(lines[:mid])
-        col2_text = '\n'.join(lines[mid:])
+    # Single column conditions text
+    cond_text = CONDITIONS_OF_CARRIAGE.strip().replace('\n', '<br/>')
+    cond_para = Paragraph(cond_text, cond_style)
 
-        col1_para = Paragraph(col1_text.replace('\n', '<br/>'), cond_style)
-        col2_para = Paragraph(col2_text.replace('\n', '<br/>'), cond_style)
+    # Draw in frame
+    frame = Frame(margin, y - conditions_height, content_width, conditions_height,
+                  leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    frame.addFromList([cond_para], c)
 
-        col_width = (content_width - 5 * mm) / 2
+    y -= conditions_height + 4 * mm
 
-        # Check if it fits
-        w1, h1 = col1_para.wrap(col_width, remaining_height)
-        w2, h2 = col2_para.wrap(col_width, remaining_height)
+    # ==========================================================================
+    # Dangerous Goods Section (matching physical ticket)
+    # ==========================================================================
+    c.setFont("Helvetica-Bold", 8)
+    c.setFillColor(black)
+    c.drawString(margin, y, "ITEMS NOT ALLOWED ON ANY FLIGHT - DANGEROUS ARTICLES IN BAGGAGE")
+    y -= 4 * mm
 
-        if h1 <= remaining_height and h2 <= remaining_height:
-            # Draw columns
-            frame1 = Frame(margin, y - remaining_height, col_width, remaining_height, leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
-            frame2 = Frame(margin + col_width + 5 * mm, y - remaining_height, col_width, remaining_height, leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    # Draw DG box
+    dg_box_height = 38 * mm
+    c.setStrokeColor(HexColor("#333333"))
+    c.setLineWidth(0.5)
+    c.rect(margin, y - dg_box_height, content_width, dg_box_height, fill=0, stroke=1)
 
-            frame1.addFromList([col1_para], c)
-            frame2.addFromList([col2_para], c)
-            break
+    # DG content - 3 columns of hazard categories
+    col_width = content_width / 3
+    dg_y = y - 3 * mm
+
+    # Column 1
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(margin + 2 * mm, dg_y, "1. EXPLOSIVES")
+    c.setFont("Helvetica", 5)
+    c.drawString(margin + 2 * mm, dg_y - 3 * mm, "Weapons, ammunition, fireworks, flares")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(margin + 2 * mm, dg_y - 8 * mm, "2. COMPRESSED GASES")
+    c.setFont("Helvetica", 5)
+    c.drawString(margin + 2 * mm, dg_y - 11 * mm, "Butane, oxygen, aqualung cylinders")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(margin + 2 * mm, dg_y - 16 * mm, "3. FLAMMABLE LIQUIDS/SOLIDS")
+    c.setFont("Helvetica", 5)
+    c.drawString(margin + 2 * mm, dg_y - 19 * mm, "Lighter fuel, matches, paints")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(margin + 2 * mm, dg_y - 24 * mm, "4. CORROSIVES")
+    c.setFont("Helvetica", 5)
+    c.drawString(margin + 2 * mm, dg_y - 27 * mm, "Acids, alkalis, wet cell batteries")
+
+    # Column 2
+    col2_x = margin + col_width + 2 * mm
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(col2_x, dg_y, "5. OXIDIZING MATERIALS")
+    c.setFont("Helvetica", 5)
+    c.drawString(col2_x, dg_y - 3 * mm, "Bleaching powder, peroxides")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(col2_x, dg_y - 8 * mm, "6. POISONS & INFECTIOUS")
+    c.setFont("Helvetica", 5)
+    c.drawString(col2_x, dg_y - 11 * mm, "Insecticides, weed-killers, virus materials")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(col2_x, dg_y - 16 * mm, "7. RADIOACTIVE MATERIALS")
+    c.setFont("Helvetica", 5)
+    c.drawString(col2_x, dg_y - 19 * mm, "Brief cases with installed alarms")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(col2_x, dg_y - 24 * mm, "8. MAGNETIC MATERIALS")
+    c.setFont("Helvetica", 5)
+    c.drawString(col2_x, dg_y - 27 * mm, "Magnetized materials, offensive items")
+
+    # Column 3
+    col3_x = margin + 2 * col_width + 2 * mm
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(col3_x, dg_y, "9. LITHIUM BATTERIES")
+    c.setFont("Helvetica", 5)
+    c.drawString(col3_x, dg_y - 3 * mm, "Carry-on baggage only for devices")
+
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(col3_x, dg_y - 8 * mm, "10. OTHER DANGEROUS ITEMS")
+    c.setFont("Helvetica", 5)
+    c.drawString(col3_x, dg_y - 11 * mm, "Mercury, irritating materials")
+
+    # Note at bottom of DG box
+    c.setFont("Helvetica-Oblique", 5)
+    c.setFillColor(HexColor("#444444"))
+    note_y = y - dg_box_height + 3 * mm
+    c.drawString(margin + 2 * mm, note_y, "Medicines and toiletries in limited quantities may be carried. Cargo must be packed in accordance with cargo regulations.")
+
+    # Draw hazard diamond symbols (simplified representations)
+    symbol_size = 8 * mm
+    symbol_y = y - dg_box_height + 12 * mm
+    symbol_x = width - margin - symbol_size - 3 * mm
+
+    # Draw a warning triangle
+    c.setStrokeColor(HexColor("#ff6600"))
+    c.setFillColor(HexColor("#ffcc00"))
+    c.setLineWidth(1)
+
+    # Triangle for "warning"
+    triangle_path = c.beginPath()
+    triangle_path.moveTo(symbol_x + symbol_size/2, symbol_y + symbol_size)
+    triangle_path.lineTo(symbol_x, symbol_y)
+    triangle_path.lineTo(symbol_x + symbol_size, symbol_y)
+    triangle_path.close()
+    c.drawPath(triangle_path, fill=1, stroke=1)
+
+    # Exclamation mark
+    c.setFillColor(black)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(symbol_x + symbol_size/2, symbol_y + 2 * mm, "!")
+
+    y -= dg_box_height + 4 * mm
 
     # ==========================================================================
     # Footer
     # ==========================================================================
-    c.setFont("Helvetica-Oblique", 7)
+    c.setFont("Helvetica-Oblique", 6)
     c.setFillColor(HexColor("#666666"))
-    c.drawCentredString(width / 2, margin, "This ticket is valid only for the flight details shown above. Please retain for your records.")
+    c.drawCentredString(width / 2, margin, "This ticket is valid only for the flight details shown above. BAC Helicopters CC - License N1105D & G1106D")
 
     c.save()
     buffer.seek(0)
@@ -761,38 +854,81 @@ BAC Helicopters
 
 
 def send_pilot_email(flight_id, flight_summary):
-    """Send manifest summary to pilot with all tickets."""
+    """Send manifest summary to pilot with all tickets - sends update each time a passenger registers."""
     pilot_email = get_pilot_email()
     if not pilot_email:
         logger.warning("PILOT_EMAIL not configured, skipping pilot notification")
         return
 
     manifest = read_manifest(flight_id)
+    passenger_count = len(manifest)
 
-    subject = f"Manifest — {flight_id}"
+    # Calculate total weights
+    total_pax_weight = sum(float(row.get('body_weight', 0) or 0) for row in manifest)
+    total_bag_weight = sum(float(row.get('bag_weight', 0) or 0) for row in manifest)
+    total_bags = sum(int(row.get('num_bags', 0) or 0) for row in manifest)
+    total_weight = total_pax_weight + total_bag_weight
 
-    body = f"""Flight Manifest Summary
+    subject = f"[MANIFEST UPDATE] {flight_summary.get('route', flight_id)} - {flight_summary.get('date', 'N/A')} - {passenger_count} PAX"
 
-Flight ID: {flight_id}
-Date: {flight_summary.get('date', 'N/A')}
-Time: {flight_summary.get('time', 'N/A')}
-Route: {flight_summary.get('route', 'N/A')}
-Registration: {flight_summary.get('registration', 'N/A')}
+    body = f"""═══════════════════════════════════════════════════════════════
+                    PASSENGER AND CARGO MANIFEST
+                         BAC HELICOPTERS CC
+═══════════════════════════════════════════════════════════════
 
-TOTALS:
-Passengers: {flight_summary['passenger_count']}
-Total Body Weight: {flight_summary['total_body_weight']:.1f} kg
-Total Bag Weight: {flight_summary['total_bag_weight']:.1f} kg
-Total Bags: {flight_summary['total_bags']}
+FLIGHT DETAILS
+──────────────────────────────────────────────────────────────
+A/CRAFT REG:    {flight_summary.get('registration', 'N/A')}
+A/C TYPE:       {flight_summary.get('ac_type', 'N/A')}
+PIC:            {flight_summary.get('pilot', 'N/A')}
+DATE:           {flight_summary.get('date', 'N/A')}
+ETD:            {flight_summary.get('time', 'N/A')}
+ROUTING:        {flight_summary.get('route', 'N/A')}
 
-PASSENGER LIST:
+═══════════════════════════════════════════════════════════════
+                      WEIGHT SUMMARY
+═══════════════════════════════════════════════════════════════
+PASSENGERS:           {passenger_count}
+TOTAL PAX WEIGHT:     {total_pax_weight:.1f} kg
+TOTAL BAG ITEMS:      {total_bags}
+TOTAL BAG WEIGHT:     {total_bag_weight:.1f} kg
+────────────────────────────────────
+TOTAL WEIGHT:         {total_weight:.1f} kg
+═══════════════════════════════════════════════════════════════
+
+PASSENGER LIST
+──────────────────────────────────────────────────────────────
 """
 
+    # Build passenger table
+    body += f"{'#':<3} {'NAME':<25} {'PAX WT':<10} {'BAGS':<6} {'BAG WT':<10} {'DG ACK':<8}\n"
+    body += "─" * 66 + "\n"
+
     for i, row in enumerate(manifest, 1):
-        body += f"\n{i}. {row.get('name', 'Unknown')}"
-        body += f"\n   Body: {row.get('body_weight', 'N/A')} kg"
-        body += f"   Bags: {row.get('num_bags', 'N/A')} ({row.get('bag_weight', 'N/A')} kg)"
-        body += f"   DG Ack: {'Yes' if row.get('dg_ack') == 'True' else 'No'}\n"
+        name = row.get('name', 'Unknown')[:24]
+        pax_wt = f"{row.get('body_weight', 'N/A')} kg"
+        bags = row.get('num_bags', '0')
+        bag_wt = f"{row.get('bag_weight', '0')} kg"
+        dg_ack = "YES" if row.get('dg_ack') == 'True' else "NO"
+        body += f"{i:<3} {name:<25} {pax_wt:<10} {bags:<6} {bag_wt:<10} {dg_ack:<8}\n"
+
+    body += "─" * 66 + "\n"
+    body += f"{'TOTALS:':<29} {total_pax_weight:<10.1f} {total_bags:<6} {total_bag_weight:<10.1f}\n"
+
+    body += f"""
+═══════════════════════════════════════════════════════════════
+
+NOTE: This manifest updates automatically each time a passenger
+completes their registration. The attached ZIP contains all
+passenger tickets received so far.
+
+All passengers have acknowledged Dangerous Goods restrictions
+and accepted the Conditions of Carriage.
+
+──────────────────────────────────────────────────────────────
+Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+BAC Helicopters CC - Air Service License N1105D & G1106D
+"""
 
     # Collect all tickets for this flight
     attachments = []
@@ -804,8 +940,14 @@ PASSENGER LIST:
             for pdf_file in flight_dir.glob("*.pdf"):
                 zf.writestr(pdf_file.name, pdf_file.read_bytes())
         zip_buffer.seek(0)
-        attachments.append((f"tickets_{flight_id}.zip", zip_buffer.getvalue(), "application/zip"))
+        attachments.append((f"manifest_{flight_id}_tickets.zip", zip_buffer.getvalue(), "application/zip"))
 
+    # Also attach the CSV manifest
+    manifest_path = MANIFEST_DIR / f"{flight_id}.csv"
+    if manifest_path.exists():
+        attachments.append((f"manifest_{flight_id}.csv", manifest_path.read_bytes(), "text/csv"))
+
+    logger.info(f"Sending pilot manifest update for {flight_id} to {pilot_email}")
     send_email([pilot_email], subject, body, attachments)
 
 
@@ -931,10 +1073,40 @@ def debug_smtp():
         'smtp_port': get_smtp_port(),
         'smtp_user': smtp_user[:3] + '***' if smtp_user else '(not set)',
         'smtp_password': '***' if smtp_password else '(not set)',
+        'smtp_password_length': len(smtp_password) if smtp_password else 0,
         'from_email': get_from_email() or '(not set)',
         'smtp_use_tls': get_smtp_use_tls(),
+        'pilot_email': get_pilot_email() or '(not set)',
     }
     return jsonify(info)
+
+
+@app.route('/debug/test_email')
+def test_email():
+    """Send a test email to verify SMTP is working."""
+    test_to = request.args.get('to', '')
+    if not test_to:
+        return jsonify({'error': 'Please provide ?to=email@example.com'}), 400
+
+    if not is_smtp_configured():
+        return jsonify({'error': 'SMTP not configured'}), 400
+
+    subject = "BAC Helicopters - Test Email"
+    body = f"""This is a test email from BAC Helicopters Ticketing System.
+
+If you received this, email sending is working correctly!
+
+Sent at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+"""
+
+    try:
+        result = send_email([test_to], subject, body)
+        if result:
+            return jsonify({'success': True, 'message': f'Test email sent to {test_to}'})
+        else:
+            return jsonify({'success': False, 'message': 'Email saved to outbox (SMTP failed)'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/docs/dg')
